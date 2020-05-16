@@ -22,22 +22,29 @@ app.get('/', function (request, response) {
     response.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// Get player colors
+app.get('/colors', function (request, response) {
+    response.send(game.colors);
+});
+
 // Starts the server.
 server.listen(5000, function () {
     console.log('Started server on port 5000');
 });
 
-// Add the WebSocket handlers
 io.on('connection', socket => {
-    console.log("Connection done");
     socket.on(Constants.SOCKET_NEW_PLAYER, (data, callback) => {
-        console.log("New player: ",data);
         game.AddNewPlayer(data.name, socket, data.color);
         //callback();
     });
 
     socket.on(Constants.SOCKET_PLAYER_ACTION, data => {
         game.PlayerMovedPiece(socket.id, data);
+    });
+
+    socket.on(Constants.SOCKET_DISCONNECT, () => {
+        console.log("User disconnected");
+        game.RemovePlayer(socket.id);
     });
 });
 

@@ -1,5 +1,7 @@
 class Piece{
-    constructor(position){
+    constructor(id,state,position){
+        this.id = id;
+        this.state = state;
         this.position = position;
     };
 };

@@ -17993,16 +17993,15 @@ module.exports = yeast;
 const Constants = require('../lib/Constants');
 
 class Game {
-    constructor(socket, board) {
+    constructor(socket) {
         this.socket = socket;
-        this.board = board;
         this.players = [];
         this.lastUpdateTime = 0;
         this.self = null;
     };
 
-    static Create(socket, board) {
-        const game = new Game(socket, board);
+    static Create(socket) {
+        const game = new Game(socket);
         game.Init();
         return game;
     };
@@ -18013,8 +18012,6 @@ class Game {
     };
 
     UpdateGameState(state) {
-        console.log(state);
-        console.log(this);
         this.self = state.self
         this.players = state.players;
         document.dispatchEvent(new CustomEvent(Constants.SOCKET_REFRESH, {
@@ -18045,7 +18042,9 @@ $(document).ready(function(){
     try{
         const socket = io('http://localhost:5000');
         const board = document.getElementById('board');
-        const game = Game.Create(socket, board);
+        const game = Game.Create(socket);
+
+        const colors = $.get('/colors', (response) => { return response});
     
         let playersCount = 0;
         do {
@@ -18060,6 +18059,11 @@ $(document).ready(function(){
         document.addEventListener(Constants.SOCKET_REFRESH, function(data){
             console.log("YEAP");
         });
+
+        window.addEventListener("beforeunload", function (e) {
+            socket.emit(Constants.SOCKET_DISCONNECT);
+            return "Message";
+          });
     }catch(ex){
         console.error(ex);
     }

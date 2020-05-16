@@ -10,19 +10,23 @@ class Game {
         this.colors = {
             'red': {
                 'owner': null,
-                'home': 1
+                'home': 1,
+                'color': 'red'
             },
             'blue': {
                 'owner': null,
-                'home': 2
+                'home': 2,
+                'color': 'blue'
             },
             'yellow': {
                 'owner': null,
-                'home': 3
+                'home': 3,
+                'color': 'yellow'
             },
             'green': {
                 'owner': null,
-                'home': 4
+                'home': 4,
+                'color': 'green'
             }
         };
     };
@@ -72,7 +76,6 @@ class Game {
         
         this.clients.forEach((client, socketID) => {
           const currentPlayer = this.players.get(socketID);
-          console.log(players);
           this.clients.get(socketID).emit(Constants.SOCKET_UPDATE, {
             self: currentPlayer,
             players: players

@@ -1,4 +1,5 @@
 const Constants = require('../lib/Constants');
+const Piece = require('./Piece');
 
 class Player {
     constructor(name,socketID,color){
@@ -18,11 +19,7 @@ class Player {
     InitPieces() {
         for(let i=0; i < 4; i++)
         {
-            this.pieces.push({
-                'id': i,
-                'state': Constants.PIECE_STATE_HOME,
-                'position': 0
-            });
+            this.pieces.push(new Piece(i,Constants.PIECE_STATE_HOME,0));
         }
     };
 

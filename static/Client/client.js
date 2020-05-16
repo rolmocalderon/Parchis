@@ -7,7 +7,9 @@ $(document).ready(function(){
     try{
         const socket = io('http://localhost:5000');
         const board = document.getElementById('board');
-        const game = Game.Create(socket, board);
+        const game = Game.Create(socket);
+
+        const colors = $.get('/colors', (response) => { return response});
     
         let playersCount = 0;
         do {
@@ -22,6 +24,11 @@ $(document).ready(function(){
         document.addEventListener(Constants.SOCKET_REFRESH, function(data){
             console.log("YEAP");
         });
+
+        window.addEventListener("beforeunload", function (e) {
+            socket.emit(Constants.SOCKET_DISCONNECT);
+            return "Message";
+          });
     }catch(ex){
         console.error(ex);
     }

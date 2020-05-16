@@ -20,8 +20,6 @@ class Game {
     };
 
     UpdateGameState(state) {
-        console.log(state);
-        console.log(this);
         this.self = state.self
         this.players = state.players;
         document.dispatchEvent(new CustomEvent(Constants.SOCKET_REFRESH, {
