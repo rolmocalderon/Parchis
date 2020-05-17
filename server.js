@@ -35,6 +35,7 @@ server.listen(5000, function () {
 io.on('connection', socket => {
     socket.on(Constants.SOCKET_NEW_PLAYER, (data, callback) => {
         game.AddNewPlayer(data.name, socket, data.color);
+        console.log("User connected");
         //callback();
     });
 
@@ -43,8 +44,8 @@ io.on('connection', socket => {
     });
 
     socket.on(Constants.SOCKET_DISCONNECT, () => {
-        console.log("User disconnected");
         game.RemovePlayer(socket.id);
+        console.log("User disconnected");
     });
 });
 

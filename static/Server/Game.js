@@ -10,22 +10,18 @@ class Game {
         this.colors = {
             'red': {
                 'owner': null,
-                'home': 1,
                 'color': 'red'
             },
             'blue': {
                 'owner': null,
-                'home': 2,
                 'color': 'blue'
             },
             'yellow': {
                 'owner': null,
-                'home': 3,
                 'color': 'yellow'
             },
             'green': {
                 'owner': null,
-                'home': 4,
                 'color': 'green'
             }
         };
@@ -42,10 +38,12 @@ class Game {
     };
 
     AddNewPlayer(name, socket, color) {
-        this.clients.set(socket.id, socket);
-        this.colors[color].owner = name;
-        const player = Player.Create(name, socket.id, this.colors[color]);
-        this.players.set(socket.id, player);
+        if (!this.players.has(socket.id)) {
+            this.clients.set(socket.id, socket);
+            this.colors[color].owner = name;
+            const player = Player.Create(name, socket.id, this.colors[color]);
+            this.players.set(socket.id, player);
+        }
     };
 
     RemovePlayer(socketID) {
@@ -56,6 +54,7 @@ class Game {
         if (this.players.has(socketID)) {
           const player = this.players.get(socketID);
           this.players.delete(socketID);
+          this.colors[player.color.color].owner = null;
           return player;
         }
     };

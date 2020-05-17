@@ -2,7 +2,7 @@
   "name": "samplegame",
   "version": "1.0.0",
   "description": "",
-  "start": "server.js",
+  "start": "server.js --inspect",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
