@@ -1,4 +1,7 @@
 module.exports = {
+    //GAME CONFIG
+    GAME_CONFIG_FRAME_RATE: 100,//1000 / 60,
+    
     //BOARD
     BOARD_BOX_NUMBER: '17',
     BOARD_SPECIALZONEBOX_NUMBER: '8',

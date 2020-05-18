@@ -29,7 +29,7 @@ class Game {
 
     Run() {
         this.lastUpdateTime = Date.now();
-        this.update();
+        this.Update();
     };
 
     Update() {

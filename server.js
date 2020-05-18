@@ -11,7 +11,6 @@ const io = socketIO(server);
 const Game = require('./static/Server/Game');
 const Constants = require('./static/lib/Constants');
 
-const FRAME_RATE = 1000 / 60;
 const game = new Game();
 
 app.set('port', 5000);
@@ -52,4 +51,4 @@ io.on('connection', socket => {
 setInterval(() => {
     game.Update();
     game.SendState();
-}, FRAME_RATE);
+}, Constants.GAME_CONFIG_FRAME_RATE);

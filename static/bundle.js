@@ -18021,7 +18021,7 @@ class Game {
 
     Run() {
         this.lastUpdateTime = Date.now();
-        this.update();
+        this.Update();
     };
 
     Update() {
@@ -18042,22 +18042,14 @@ var colors = null;
 
 $(document).ready(function(){
     try{
-        const socket = io('http://localhost:5000');
+        const socket = io();
         const board = document.getElementById('board');
         CreateBoard(board);
         const game = Game.Create(socket);
         
         $.get('/colors', HandleColorsResponse);
     
-        let playersCount = 0;
-        do {
-            const player = GetPlayer();
-            const name = player.name;
-            const color = player.color; 
-    
-            socket.emit(Constants.SOCKET_NEW_PLAYER, { name, color } /* Callback function to print the pieces into the board */);
-            playersCount += 1;
-        } while (!playersCount > 0);
+        AddNewPlayer(socket);
 
         document.addEventListener(Constants.SOCKET_REFRESH, function(response){
             let data = response.detail;
@@ -18073,11 +18065,19 @@ $(document).ready(function(){
         window.addEventListener("beforeunload", function (e) {
             socket.emit(Constants.SOCKET_DISCONNECT);
             return "Message";
-          });
+        });
     }catch(ex){
         console.error(ex);
     }
 });
+
+function AddNewPlayer(socket){
+    const player = GetPlayer();
+    const name = player.name;
+    const color = player.color;
+
+    socket.emit(Constants.SOCKET_NEW_PLAYER, { name, color } /* Callback function to print the pieces into the board */);
+}
 
 function GetPlayer() {
     const players = [
@@ -18107,32 +18107,61 @@ function CreateBoard(board) {
     let num = 1;
     for(let i=0; i < board.children.length; i++){
         let region = board.children[i];
+        const color = region.id;
         for(let i=1; i <= Constants.BOARD_BOX_NUMBER; i++) {
-            let parent = region,
-                className = Constants.PIECE_STATE_FIELD, 
-                state = Constants.PIECE_STATE_FIELD;
-
-            if(IsFieldType(num,Constants.BOARD_STARTHOMEFIELD_NUMBER_LIST)){
-                className += ' ' + region.id;
-                state = Constants.PIECE_STATE_HOME;
-            }else if(IsFieldType(num,Constants.BOARD_SAFEFIELD_NUMBER_LIST)){
-                className += ' ' + Constants.PIECE_STATE_SAFE;
-                state = Constants.PIECE_STATE_SAFE;
-            }
-            
+            let parent = region
+            let state;
+       
             if(i == Constants.BOARD_BOX_NUMBER){
                 parent.insertAdjacentHTML("beforeend", `<div class="special-zone"></div>`)
                 parent = parent.lastChild;
                 state = Constants.PIECE_STATE_SAFE;
             }
-
-            parent.insertAdjacentHTML("beforeend", `<div class="${ className }" state="${ state }">${ num }</div>`);
+            
+            InsertField(parent,num,color);
 
             num++;
         }
 
-        CreateSpecialZone(region.lastChild, region.id);
+        CreateSpecialZone(region.lastChild, color);
     }
+}
+
+function InsertField(region,num,color) {
+    let className = Constants.PIECE_STATE_FIELD;
+    let state = Constants.PIECE_STATE_FIELD;
+    let text = '';
+    let isDotType = false;
+
+    let field = CreateElement(region,"beforeend",`<div class state></div>`);
+
+    if(IsFieldType(num,Constants.BOARD_STARTHOMEFIELD_NUMBER_LIST)){
+        CreateHome(field, color);
+        className += ' ' + color + ' ' + Constants.PIECE_STATE_HOME;
+        state = Constants.PIECE_STATE_HOME;
+        isDotType = true;
+    }else if(IsFieldType(num,Constants.BOARD_SAFEFIELD_NUMBER_LIST)){
+        className += ' ' + Constants.PIECE_STATE_SAFE;
+        state = Constants.PIECE_STATE_SAFE;
+        isDotType = true;
+    }else{
+        text = num;
+    }
+
+    if(isDotType) CreateElement(field,"beforeend",GetDotTemplate(color,num));
+    else field.innerText = text;
+
+    field.className = className;
+    field.setAttribute('state',state);
+}
+
+function CreateElement(parent,position,template){
+    parent.insertAdjacentHTML(position,template);
+    return parent.lastChild;
+}
+
+function GetDotTemplate(color,text){
+    return `<span class="dot" color="${ color }">${ text }</span>`
 }
 
 function IsFieldType(num,fieldsList){
@@ -18151,8 +18180,15 @@ function CreateSpecialZone(specialZoneParent, color) {
         specialZoneParent.insertAdjacentHTML("beforeend", `<div class="${ className }" state="${ state }"></div>`);
     }
 }
+
+function CreateHome(region, color) {
+    region.insertAdjacentHTML("beforebegin", `<div class="home ${ color }" state="${ Constants.PIECE_STATE_HOME }">HOME OF THE ${ color }</div>`);
+}
 },{"../lib/Constants":51,"./Game.js":49,"jquery":30,"socket.io-client":33}],51:[function(require,module,exports){
 module.exports = {
+    //GAME CONFIG
+    GAME_CONFIG_FRAME_RATE: 100,//1000 / 60,
+    
     //BOARD
     BOARD_BOX_NUMBER: '17',
     BOARD_SPECIALZONEBOX_NUMBER: '8',

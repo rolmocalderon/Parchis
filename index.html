@@ -11,6 +11,12 @@
     text-align: center;
   }
 
+  .safe, .home{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
   .special-zone{
     display: flex;
     flex-direction: row;
@@ -36,18 +42,28 @@
   .yellow{
     background-color: yellow;
   }
+
+  .dot {
+    height: 25px;
+    width: 25px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(0,0,0,0.5);
+  }
 </style>
 </head>
 <body>
   <script type="module" src="/static/bundle.js" defer></script>
   <div id="board">
-    <div id="red">
+    <div id="red" name="player">
     </div>
-    <div id="blue">
+    <div id="blue"name="player">
     </div>
-    <div id="yellow">
+    <div id="yellow" name="player">
     </div>
-    <div id="green">
+    <div id="green" name="player">
     </div>
   </div>
 </body>
