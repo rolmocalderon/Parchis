@@ -66,6 +66,11 @@ function PopulatePlayerRegion(player){
         region.setAttribute('owner',player.name);
         region.insertAdjacentHTML("beforeend", `<h3>${ player.name }</h3>`);
     }
+
+    const home = region.querySelector('[state="home"]');
+    if(home.querySelectorAll('.piece').length < 2){
+        CreateElement(home,'afterbegin',`<span class="dot piece red" color="red" style=""></span>`);
+    }
 }
 
 function CreateBoard(board) {
@@ -73,22 +78,22 @@ function CreateBoard(board) {
     for(let i=0; i < board.children.length; i++){
         let region = board.children[i];
         const color = region.id;
-        for(let i=1; i <= Constants.BOARD_BOX_NUMBER; i++) {
-            let parent = region
-            let state;
-       
-            if(i == Constants.BOARD_BOX_NUMBER){
-                parent.insertAdjacentHTML("beforeend", `<div class="special-zone"></div>`)
-                parent = parent.lastChild;
-                state = Constants.PIECE_STATE_SAFE;
-            }
-            
-            InsertField(parent,num,color);
 
+        for(let j=1; j <= Constants.BOARD_BOX_NUMBER; j++) {
+            if(j == Constants.BOARD_BOX_NUMBER){
+                CreateElement(region,'beforeend',GetSpecialZoneTemplate());
+                region = region.lastChild;
+            }
+
+            InsertField(region,num,color);
             num++;
         }
+    }
 
-        CreateSpecialZone(region.lastChild, color);
+    for(let item of board.children){
+        const fieldId = 'field' + Constants.BOARD_SPECIALZONE_ENTRANCEFIELD_LIST[item.id];
+        const specialZone = document.getElementById(fieldId).parentNode;
+        CreateSpecialZone(specialZone, item.id);
     }
 }
 
@@ -98,7 +103,7 @@ function InsertField(region,num,color) {
     let text = '';
     let isDotType = false;
 
-    let field = CreateElement(region,"beforeend",`<div class state></div>`);
+    let field = CreateElement(region,"beforeend",GetFieldTemplate());
 
     if(IsFieldType(num,Constants.BOARD_STARTHOMEFIELD_NUMBER_LIST)){
         CreateHome(field, color);
@@ -113,20 +118,48 @@ function InsertField(region,num,color) {
         text = num;
     }
 
-    if(isDotType) CreateElement(field,"beforeend",GetDotTemplate(color,num));
-    else field.innerText = text;
+    let fieldClassList = 'field-number';
+    if(isDotType) fieldClassList += ' dot';
+
+    let params = {
+        'classList': fieldClassList,
+        'color': color,
+        'text': num
+    }
+    CreateElement(field,"beforeend",GetDotTemplate(params));
 
     field.className = className;
     field.setAttribute('state',state);
+    field.setAttribute('id','field'+ num);
+
+    /*<div class="field" state="field">
+        <span class="dot piece red" color="red"></span>
+        <span class="field-number">10</span>
+        <span class="dot piece red" color="red"></span>
+    </div>*/
 }
 
 function CreateElement(parent,position,template){
+    if(!template) return null;
     parent.insertAdjacentHTML(position,template);
     return parent.lastChild;
 }
 
-function GetDotTemplate(color,text){
-    return `<span class="dot" color="${ color }">${ text }</span>`
+function GetDotTemplate(params){
+    return `<span id="${ params.id ?? '' }" class="${ params.classList }" color="${ params.color }">${ params.text }</span>`;
+}
+
+function GetSpecialZoneTemplate(params){
+    return `<div class="special-zone"></div>`;
+}
+
+function GetSpecialZoneFieldTemplate(params){
+    if(!params) return null;
+    return `<div id="${ params.id ?? '' }" class="${ params.className }" state="${ params.state }"></div>`;
+}
+
+function GetFieldTemplate(){
+    return `<div class state></div>`
 }
 
 function IsFieldType(num,fieldsList){
@@ -142,7 +175,9 @@ function CreateSpecialZone(specialZoneParent, color) {
             state = Constants.PIECE_STATE_END;
         }
         
-        specialZoneParent.insertAdjacentHTML("beforeend", `<div class="${ className }" state="${ state }"></div>`);
+        const id = 'specialZone' + i;
+        let params = { id,className,state };
+        CreateElement(specialZoneParent,'beforeend',GetSpecialZoneFieldTemplate(params));
     }
 }
 

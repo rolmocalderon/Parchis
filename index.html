@@ -4,11 +4,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <style>
   .field{
-    max-height: 10px;
+    height: 10px;
     padding: 10px 20px;
     border: 1px solid black;
     width: 120px;
-    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
   }
 
   .safe, .home{
@@ -52,6 +55,21 @@
     justify-content: center;
     border: 1px solid rgba(0,0,0,0.5);
   }
+
+  .piece:first-child {
+    position: relative;
+    right: 20px;
+  }
+
+  .piece:last-child {
+    position: relative;
+    left: 20px;
+  }
+
+  .field-number {
+    position: absolute;
+  }
+  
 </style>
 </head>
 <body>
