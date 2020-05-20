@@ -3,7 +3,7 @@
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <style>
-  .field{
+  .field {
     height: 10px;
     padding: 10px 20px;
     border: 1px solid black;
@@ -14,35 +14,40 @@
     position: relative;
   }
 
-  .safe, .home{
+  .safe, .home {
     display: flex;
-    justify-content: center;
+    justify-content: space-evenly;
     align-items: center;
   }
 
-  .special-zone{
+  .home {
+    width: 250px;
+    height: 40px;
+  }
+
+  .special-zone {
     display: flex;
     flex-direction: row;
   }
 
-  .special:first-of-type{
+  .special:first-of-type {
     margin: 3px;
   }
 
-  .special-zone > .special:nth-last-child(1){
+  .special-zone > .special:nth-last-child(1) {
     background-color: purple;
   }
 
-  .red{
+  .red {
     background-color: red;
   }
-  .blue{
+  .blue {
     background-color: blue;
   }
-  .green{
+  .green {
     background-color: green;
   }
-  .yellow{
+  .yellow {
     background-color: yellow;
   }
 

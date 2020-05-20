@@ -13,6 +13,8 @@ class Player {
     static Create(name, socketID,color) {
         const player = new Player(name, socketID, color);
         player.InitPieces();
+        player.lastUpdateTime = new Date();
+
         return player;
     };
 

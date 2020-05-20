@@ -6,6 +6,7 @@ class Game {
         this.players = [];
         this.lastUpdateTime = 0;
         this.self = null;
+        this.colors = null;
     };
 
     static Create(socket) {

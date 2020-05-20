@@ -3,6 +3,7 @@ const express = require('express');
 const http = require('http');
 const path = require('path');
 const socketIO = require('socket.io');
+const cookieParser = require('cookie-parser')
 
 const app = express();
 const server = http.Server(app);
@@ -14,10 +15,16 @@ const Constants = require('./static/lib/Constants');
 const game = new Game();
 
 app.set('port', 5000);
+app.use(cookieParser());
 app.use('/static', express.static(__dirname + '/static'));
 
-// Routing
 app.get('/', function (request, response) {
+      // Cookies that have not been signed
+    if(!IsCookie(request)){
+        response.cookie("Parchis", {'game':game.players});
+    }
+ 
+    console.log(request.cookies.Parchis);
     response.sendFile(path.join(__dirname, 'index.html'));
 });
 
@@ -33,9 +40,9 @@ server.listen(5000, function () {
 
 io.on('connection', socket => {
     socket.on(Constants.SOCKET_NEW_PLAYER, (data, callback) => {
-        game.AddNewPlayer(data.name, socket, data.color);
+        const player = game.AddNewPlayer(data.player.name, socket, data.player.color);
         console.log("User connected");
-        //callback();
+        callback(player);
     });
 
     socket.on(Constants.SOCKET_PLAYER_ACTION, data => {
@@ -52,3 +59,7 @@ setInterval(() => {
     game.Update();
     game.SendState();
 }, Constants.GAME_CONFIG_FRAME_RATE);
+
+function IsCookie(request) {
+    return Object.keys(request.cookies).length !== 0;
+}

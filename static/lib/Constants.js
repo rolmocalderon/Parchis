@@ -1,6 +1,6 @@
 module.exports = {
     //GAME CONFIG
-    GAME_CONFIG_FRAME_RATE: 100,//1000 / 60,
+    GAME_CONFIG_FRAME_RATE: 2000,//1000 / 60,
     
     //BOARD
     BOARD_BOX_NUMBER: '17',
@@ -22,10 +22,11 @@ module.exports = {
     SOCKET_REFRESH: 'refresh',
 
     //PIECES
+    PIECE: 'piece',
     PIECE_STATE_HOME: 'home',
     PIECE_STATE_END: 'end',
     PIECE_STATE_FIELD: 'field',
-    PIECE_STATE_SAFE: 'safe',
+    PIECE_STATE_SAFE: 'safe_field',
     PIECE_STATE_SAFE_SELF: 'safe_self',
     PIECE_STATE_SAFE_ENEMY: 'safe_enemy',
     PIECE_STATE_SPECIAL_ZONE: 'special_zone'

@@ -2704,7 +2704,7 @@ WS.prototype.check = function () {
 };
 
 }).call(this,require("buffer").Buffer)
-},{"../transport":12,"buffer":54,"component-inherit":8,"debug":20,"engine.io-parser":23,"parseqs":31,"ws":53,"yeast":48}],18:[function(require,module,exports){
+},{"../transport":12,"buffer":55,"component-inherit":8,"debug":20,"engine.io-parser":23,"parseqs":31,"ws":54,"yeast":48}],18:[function(require,module,exports){
 // browser shim for xmlhttprequest module
 
 var hasCORS = require('has-cors');
@@ -3189,7 +3189,7 @@ formatters.j = function (v) {
 };
 
 }).call(this,require('_process'))
-},{"./common":21,"_process":56}],21:[function(require,module,exports){
+},{"./common":21,"_process":57}],21:[function(require,module,exports){
 
 /**
  * This is the common logic for both the Node.js and web browser
@@ -4529,7 +4529,7 @@ function hasBinary (obj) {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":54,"isarray":29}],27:[function(require,module,exports){
+},{"buffer":55,"isarray":29}],27:[function(require,module,exports){
 
 /**
  * Module exports.
@@ -16736,7 +16736,7 @@ function url (uri, loc) {
 
 },{"debug":38,"parseuri":32}],38:[function(require,module,exports){
 arguments[4][20][0].apply(exports,arguments)
-},{"./common":39,"_process":56,"dup":20}],39:[function(require,module,exports){
+},{"./common":39,"_process":57,"dup":20}],39:[function(require,module,exports){
 arguments[4][21][0].apply(exports,arguments)
 },{"dup":21,"ms":40}],40:[function(require,module,exports){
 arguments[4][22][0].apply(exports,arguments)
@@ -17324,7 +17324,7 @@ function isBuf(obj) {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":54}],44:[function(require,module,exports){
+},{"buffer":55}],44:[function(require,module,exports){
 (function (process){
 /**
  * This is the web browser implementation of `debug()`.
@@ -17523,7 +17523,7 @@ function localstorage() {
 }
 
 }).call(this,require('_process'))
-},{"./debug":45,"_process":56}],45:[function(require,module,exports){
+},{"./debug":45,"_process":57}],45:[function(require,module,exports){
 
 /**
  * This is the common logic for both the Node.js and web browser
@@ -17998,6 +17998,7 @@ class Game {
         this.players = [];
         this.lastUpdateTime = 0;
         this.self = null;
+        this.colors = null;
     };
 
     static Create(socket) {
@@ -18037,6 +18038,7 @@ const $ = require('jquery');
 const io = require('socket.io-client');
 const Game = require('./Game.js');
 const Constants = require('../lib/Constants');
+const MoveValidations = require('../lib/MoveValidations');
 
 var colors = null;
 
@@ -18060,6 +18062,9 @@ $(document).ready(function(){
                     PopulatePlayerRegion(player[1]);
                 }
             }
+
+            console.log("Lets validate");
+            MoveValidations.FieldValidation(document.getElementById("field44"));
         });
 
         window.addEventListener("beforeunload", function (e) {
@@ -18073,10 +18078,8 @@ $(document).ready(function(){
 
 function AddNewPlayer(socket){
     const player = GetPlayer();
-    const name = player.name;
-    const color = player.color;
 
-    socket.emit(Constants.SOCKET_NEW_PLAYER, { name, color } /* Callback function to print the pieces into the board */);
+    socket.emit(Constants.SOCKET_NEW_PLAYER, { player }, PopulatePlayerRegion);
 }
 
 function GetPlayer() {
@@ -18095,7 +18098,7 @@ function HandleColorsResponse(response) {
 }
 
 function PopulatePlayerRegion(player){
-    const region = document.getElementById(player.color.color);
+    const region = document.getElementById(player.color);
     const owner = region.getAttribute('owner');
     if(owner !== player.name){
         region.setAttribute('owner',player.name);
@@ -18103,8 +18106,10 @@ function PopulatePlayerRegion(player){
     }
 
     const home = region.querySelector('[state="home"]');
-    if(home.querySelectorAll('.piece').length < 2){
-        CreateElement(home,'afterbegin',`<span class="dot piece red" color="red" style=""></span>`);
+    for(let piece of player.pieces){
+        if(home.querySelectorAll('.piece').length < 4){
+            CreateElement(home,'afterbegin',`<span class="dot piece ${ player.color }" color="${ player.color }" style=""></span>`);
+        }
     }
 }
 
@@ -18142,8 +18147,8 @@ function InsertField(region,num,color) {
 
     if(IsFieldType(num,Constants.BOARD_STARTHOMEFIELD_NUMBER_LIST)){
         CreateHome(field, color);
-        className += ' ' + color + ' ' + Constants.PIECE_STATE_HOME;
-        state = Constants.PIECE_STATE_HOME;
+        className += ' ' + color + ' ' + Constants.PIECE_STATE_SAFE_SELF;
+        state = Constants.PIECE_STATE_SAFE_SELF;
         isDotType = true;
     }else if(IsFieldType(num,Constants.BOARD_SAFEFIELD_NUMBER_LIST)){
         className += ' ' + Constants.PIECE_STATE_SAFE;
@@ -18217,12 +18222,12 @@ function CreateSpecialZone(specialZoneParent, color) {
 }
 
 function CreateHome(region, color) {
-    region.insertAdjacentHTML("beforebegin", `<div class="home ${ color }" state="${ Constants.PIECE_STATE_HOME }">HOME OF THE ${ color }</div>`);
+    region.insertAdjacentHTML("beforebegin", `<div class="home ${ color }" state="${ Constants.PIECE_STATE_HOME }"></div>`);
 }
-},{"../lib/Constants":51,"./Game.js":49,"jquery":30,"socket.io-client":33}],51:[function(require,module,exports){
+},{"../lib/Constants":51,"../lib/MoveValidations":52,"./Game.js":49,"jquery":30,"socket.io-client":33}],51:[function(require,module,exports){
 module.exports = {
     //GAME CONFIG
-    GAME_CONFIG_FRAME_RATE: 100,//1000 / 60,
+    GAME_CONFIG_FRAME_RATE: 2000,//1000 / 60,
     
     //BOARD
     BOARD_BOX_NUMBER: '17',
@@ -18244,15 +18249,49 @@ module.exports = {
     SOCKET_REFRESH: 'refresh',
 
     //PIECES
+    PIECE: 'piece',
     PIECE_STATE_HOME: 'home',
     PIECE_STATE_END: 'end',
     PIECE_STATE_FIELD: 'field',
-    PIECE_STATE_SAFE: 'safe',
+    PIECE_STATE_SAFE: 'safe_field',
     PIECE_STATE_SAFE_SELF: 'safe_self',
     PIECE_STATE_SAFE_ENEMY: 'safe_enemy',
     PIECE_STATE_SPECIAL_ZONE: 'special_zone'
 };
 },{}],52:[function(require,module,exports){
+const Constants = require('../lib/Constants');
+
+module.exports = {
+    ValidateMovement: function(field,incomingPiece) {
+        const state = field.getAttribute('state');
+        switch (state) {
+            case Constants.PIECE_STATE_FIELD:
+                return FieldValidation(field,incomingPiece);
+            case Constants.PIECE_STATE_SAFE:
+                return SafeFieldValidation(field,incomingPiece);
+            case Constants.PIECE_STATE_SAFE_SELF:
+                return SafeSelfFieldValidation(field,incomingPiece);
+            case Constants.PIECE_STATE_SAFE_ENEMY:
+                return SafeEnemyFieldValidation(field,incomingPiece);
+            default:
+                return false;
+        }
+    },
+    FieldValidation: function(field,incomingPiece){
+        const pieces = field.querySelectorAll('[name="' + Constants.PIECE + '"]');
+        return false;
+    },
+    SafeFieldValidation: function(field,incomingPiece){
+        console.log(safe_field);
+    },
+    SafeSelfFieldValidation: function(field,incomingPiece){
+        console.log(safe_self);
+    },
+    SafeEnemyFieldValidation: function(field,incomingPiece){
+        console.log(safe_enemy);
+    }
+}
+},{"../lib/Constants":51}],53:[function(require,module,exports){
 'use strict'
 
 exports.byteLength = byteLength
@@ -18406,9 +18445,9 @@ function fromByteArray (uint8) {
   return parts.join('')
 }
 
-},{}],53:[function(require,module,exports){
-
 },{}],54:[function(require,module,exports){
+
+},{}],55:[function(require,module,exports){
 (function (Buffer){
 /*!
  * The buffer module from node.js, for the browser.
@@ -20189,7 +20228,7 @@ function numberIsNaN (obj) {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"base64-js":52,"buffer":54,"ieee754":55}],55:[function(require,module,exports){
+},{"base64-js":53,"buffer":55,"ieee754":56}],56:[function(require,module,exports){
 exports.read = function (buffer, offset, isLE, mLen, nBytes) {
   var e, m
   var eLen = (nBytes * 8) - mLen - 1
@@ -20275,7 +20314,7 @@ exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
   buffer[offset + i - d] |= s * 128
 }
 
-},{}],56:[function(require,module,exports){
+},{}],57:[function(require,module,exports){
 // shim for using process in browser
 var process = module.exports = {};
 

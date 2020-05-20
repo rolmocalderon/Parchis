@@ -41,8 +41,10 @@ class Game {
         if (!this.players.has(socket.id)) {
             this.clients.set(socket.id, socket);
             this.colors[color].owner = name;
-            const player = Player.Create(name, socket.id, this.colors[color]);
+            const player = Player.Create(name, socket.id, color);
             this.players.set(socket.id, player);
+
+            return player;
         }
     };
 
@@ -54,7 +56,7 @@ class Game {
         if (this.players.has(socketID)) {
           const player = this.players.get(socketID);
           this.players.delete(socketID);
-          this.colors[player.color.color].owner = null;
+          this.colors[player.color].owner = null;
           return player;
         }
     };
