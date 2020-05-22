@@ -1,6 +1,18 @@
-const Constants = require('../lib/Constants');
+const Constants = require('./Constants');
 
 module.exports = {
+    GetAccesibleFields: function(incomingPiece,dieces) {
+        const state = incomingPiece.parentElement.getAttribute('state');
+        const color = incomingPiece.getAttribute('color');
+
+        if(state === Constants.PIECE_STATE_HOME){
+            const home = document.getElementById(color);
+            let canLeaveHome = Object.values(dieces).some(x => x == Constants.DIECES_START_VALUE);
+            if(canLeaveHome){
+                return home.querySelectorAll('[state="' + Constants.PIECE_STATE_SAFE_SELF +'"]');
+            }
+        }
+    },
     ValidateMovement: function(field,incomingPiece) {
         const state = field.getAttribute('state');
         switch (state) {

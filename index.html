@@ -58,7 +58,51 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px solid rgba(0,0,0,0.5);
+    border: 1px solid black;
+  }
+
+  .piece {
+    box-shadow: 2px 3px 6px 1px;
+  }
+
+  .piece.selected {
+    border: 1px solid white;
+  }
+
+  .piece:hover {
+    cursor: pointer;
+  }
+
+  .piece.red {
+    background: linear-gradient(to top right, #ff9999 0%, #ff0000 100%);
+  }
+
+  .piece.red:hover {
+    background: linear-gradient(to top right, #ff0000 0%, #ff9999 100%);
+  }
+
+  .piece.yellow {
+    background: linear-gradient(to top right, #ffffcc 6%, #ffff00 101%);
+  }
+  
+  .piece.yellow:hover {
+    background: linear-gradient(to top right, #ffff00 6%, #ffffcc 101%);
+  }
+
+  .piece.blue {
+    background: linear-gradient(to top right, #3399ff 16%, #0000ff 101%);
+  }
+
+  .piece.blue:hover {
+    background: linear-gradient(to top right, #0000ff 16%, #3399ff 101%);
+  }
+
+  .piece.green {
+    background: linear-gradient(to top right, #00ff00 0%, #009933 57%);
+  }
+  
+  .piece.green:hover {
+    background: linear-gradient(to top right, #009933 0%, #00ff00 57%);
   }
 
   .piece:first-child {
@@ -74,11 +118,25 @@
   .field-number {
     position: absolute;
   }
+
+  .dieces {
+    display: flex;
+    flex-direction: column;;
+  }
+
+  .accesible-field{
+    border: 3px solid black;
+  }
   
 </style>
 </head>
 <body>
   <script type="module" src="/static/bundle.js" defer></script>
+  <button id="throwDieces">Throw Dieces</button>
+  <div class="dieces">
+    <span id="diece-one">Value: <span name="value">5</span></span>
+    <span id="diece-two">Value: <span name="value">5</span></span>
+  </div>
   <div id="board">
     <div id="red" name="player">
     </div>

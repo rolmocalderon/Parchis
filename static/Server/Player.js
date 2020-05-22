@@ -1,5 +1,5 @@
 const Constants = require('../lib/Constants');
-const Piece = require('./Piece');
+const Piece = require('../Server/Piece');
 
 class Player {
     constructor(name,socketID,color){

@@ -14,6 +14,9 @@ module.exports = {
         'green':51
     },
 
+    //DIECES
+    DIECES_START_VALUE: 5,
+
     //SOCKET
     SOCKET_UPDATE: 'update',
     SOCKET_NEW_PLAYER: 'new_player',
