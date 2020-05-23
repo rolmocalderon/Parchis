@@ -26,9 +26,9 @@ class Player {
     };
 
     MovePiece(data) {
-        const piece = this.pieces.filter(piece => piece.id = data.piece.id);
+        /*const piece = this.pieces.filter(piece => piece.id = data.piece.id);
         piece.state = data.piece.state;
-        piece.position = data.piece.position;
+        piece.position = data.piece.position;*/
     };
 };
 

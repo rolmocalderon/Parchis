@@ -36,7 +36,7 @@ class Game {
         this.Update();
     };
 
-    Update(event, data) {
+    Update(data) {
         this.lastUpdateTime = Date.now();
         if (this.self) {
             this.self = data.detail.self;

@@ -18028,7 +18028,7 @@ class Game {
         this.Update();
     };
 
-    Update(event, data) {
+    Update(data) {
         this.lastUpdateTime = Date.now();
         if (this.self) {
             this.self = data.detail.self;
@@ -18078,6 +18078,9 @@ $(document).ready(function () {
             PieceMovement.FieldValidation(document.getElementById("field44"));
         });
 
+        let throwDiecesButton = document.getElementById('throwDieces');
+        throwDiecesButton.addEventListener('click',ThrowDieces);
+
         window.addEventListener("beforeunload", function (e) {
             socket.emit(Constants.SOCKET_DISCONNECT);
             return "Message";
@@ -18086,6 +18089,16 @@ $(document).ready(function () {
         console.error(ex);
     }
 });
+
+function ThrowDieces(){
+    let dieceOneSpan = document.querySelector('#diece-one > [name="value"]');
+    let dieceTwoSpan = document.querySelector('#diece-two > [name="value"]');
+    let dieceOne = Math.floor(Math.random() * Math.floor(6)) + 1;
+    let dieceTwo = Math.floor(Math.random() * Math.floor(6)) + 1;
+
+    dieces.dieceOne = dieceOne, dieceOneSpan.innerHTML = dieceOne;
+    dieces.dieceTwo = dieceTwo, dieceTwoSpan.innerHTML = dieceTwo;
+}
 
 function AddNewPlayer(socket) {
     const player = GetPlayer();
@@ -18106,8 +18119,15 @@ function GetPlayer() {
 
 function MovePiece() {
     let selectedPiece = document.querySelector('.selected');
+
+    if(!PieceMovement.ValidateMovement(this,selectedPiece)) return;
     //Object.values(game.self.pieces).some(x => x.id == selectedPiece.id);
     this.appendChild(selectedPiece);
+    this.classList.remove('accesible-field');
+    this.removeEventListener('click',MovePiece);
+
+    selectedPiece.classList.remove('selected');
+    selectedPiece.addEventListener('click', SelectPiece);
 
     document.dispatchEvent(new CustomEvent(Constants.SOCKET_PLAYER_ACTION, {
         detail: { 'self': game.self }
@@ -18143,15 +18163,26 @@ function DeselectAllPieces() {
 function SelectPiece() {
     DeselectAllPieces();
     let accesibleFields = PieceMovement.GetAccesibleFields(this, dieces)
-    EmphasizeAccesibleFields(accesibleFields);
+    if(accesibleFields){
+        EmphasizeAccesibleFields(accesibleFields);
+    }
+
     this.classList.add('selected');
     game.selectedPiece = this;
 }
 
+function UnSetAccesibleFields(){
+    let accesibleFields = document.querySelectorAll('.accesible-field');
+    if(accesibleFields.length > 0){
+        accesibleFields.map(x => x.classList.remove('accesible-field'));
+    }
+}
+
 function EmphasizeAccesibleFields(accesibleFields) {
+    UnSetAccesibleFields();
     for (let field of accesibleFields) {
         field.classList.add('accesible-field');
-        field.addEventListener('click', MovePiece(piece));
+        field.addEventListener('click', MovePiece);
     }
 }
 
@@ -18329,42 +18360,86 @@ module.exports = {
     GetAccesibleFields: function(incomingPiece,dieces) {
         const state = incomingPiece.parentElement.getAttribute('state');
         const color = incomingPiece.getAttribute('color');
-
+        const home = document.getElementById(color);
+        
         if(state === Constants.PIECE_STATE_HOME){
-            const home = document.getElementById(color);
             let canLeaveHome = Object.values(dieces).some(x => x == Constants.DIECES_START_VALUE);
             if(canLeaveHome){
                 return home.querySelectorAll('[state="' + Constants.PIECE_STATE_SAFE_SELF +'"]');
             }
+        }else{
+            let field = incomingPiece.parentElement;
+            let currentFieldNum = parseInt(field.id.split(Constants.PIECE_STATE_FIELD)[1]);
+            let diecesSum = Object.values(dieces).reduce((accumulator, currentValue) => accumulator + currentValue);
+            let requestedFieldNum = diecesSum + currentFieldNum;
+            requestedFieldNum = requestedFieldNum > 68 ? requestedFieldNum - 68  : requestedFieldNum;
+
+            if(this.EntranceToSpecialZoneValidation(requestedFieldNum,currentFieldNum,color)){
+                console.log("YEAH");
+            }
+
+            return document.querySelectorAll('#' + Constants.PIECE_STATE_FIELD + requestedFieldNum);
         }
     },
     ValidateMovement: function(field,incomingPiece) {
+        if(!this.MaxPieceCountInFieldValidation(field)) return false;
+
         const state = field.getAttribute('state');
         switch (state) {
             case Constants.PIECE_STATE_FIELD:
-                return FieldValidation(field,incomingPiece);
+                return this.FieldValidation(field,incomingPiece);
             case Constants.PIECE_STATE_SAFE:
-                return SafeFieldValidation(field,incomingPiece);
+                return this.SafeFieldValidation(field,incomingPiece);
             case Constants.PIECE_STATE_SAFE_SELF:
-                return SafeSelfFieldValidation(field,incomingPiece);
+                return this.SafeSelfFieldValidation(field,incomingPiece);
             case Constants.PIECE_STATE_SAFE_ENEMY:
-                return SafeEnemyFieldValidation(field,incomingPiece);
+                return this.SafeEnemyFieldValidation(field,incomingPiece);
             default:
                 return false;
         }
     },
     FieldValidation: function(field,incomingPiece){
         const pieces = field.querySelectorAll('[name="' + Constants.PIECE + '"]');
-        return false;
+        return true;
     },
     SafeFieldValidation: function(field,incomingPiece){
-        console.log(safe_field);
+        console.log("safe_field");
+        return true;
     },
     SafeSelfFieldValidation: function(field,incomingPiece){
-        console.log(safe_self);
+        console.log("SAFE SELF");
+        return true;
     },
     SafeEnemyFieldValidation: function(field,incomingPiece){
-        console.log(safe_enemy);
+        console.log("safe_enemy");
+        return true;
+    },
+    MaxPieceCountInFieldValidation: function(field){
+        if(field.querySelectorAll('.piece').length < 2) return true;
+
+        return false;
+    },
+    EntranceToSpecialZoneValidation: function(requestedNum,currentNum,color){
+        while(true){
+            currentNum++;
+            currentNum = currentNum > 68 ? currentNum - 68  : currentNum;
+            let field = document.querySelector('#' + Constants.PIECE_STATE_FIELD + currentNum);
+            if(currentNum == GetEntranceSpecialZoneByColor(color)) return true;
+            if(currentNum == requestedNum) return false;
+        }
+    }
+}
+
+function GetEntranceSpecialZoneByColor(color){
+    switch (color) {
+        case "red":
+            return 68;
+        case "yellow":
+            return 34;
+        case "blue":
+            return 17;
+        case "green":
+            return 51;
     }
 }
 },{"./Constants":51}],53:[function(require,module,exports){

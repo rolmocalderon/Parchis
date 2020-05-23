@@ -37,6 +37,9 @@ $(document).ready(function () {
             PieceMovement.FieldValidation(document.getElementById("field44"));
         });
 
+        let throwDiecesButton = document.getElementById('throwDieces');
+        throwDiecesButton.addEventListener('click',ThrowDieces);
+
         window.addEventListener("beforeunload", function (e) {
             socket.emit(Constants.SOCKET_DISCONNECT);
             return "Message";
@@ -45,6 +48,16 @@ $(document).ready(function () {
         console.error(ex);
     }
 });
+
+function ThrowDieces(){
+    let dieceOneSpan = document.querySelector('#diece-one > [name="value"]');
+    let dieceTwoSpan = document.querySelector('#diece-two > [name="value"]');
+    let dieceOne = Math.floor(Math.random() * Math.floor(6)) + 1;
+    let dieceTwo = Math.floor(Math.random() * Math.floor(6)) + 1;
+
+    dieces.dieceOne = dieceOne, dieceOneSpan.innerHTML = dieceOne;
+    dieces.dieceTwo = dieceTwo, dieceTwoSpan.innerHTML = dieceTwo;
+}
 
 function AddNewPlayer(socket) {
     const player = GetPlayer();
@@ -65,8 +78,15 @@ function GetPlayer() {
 
 function MovePiece() {
     let selectedPiece = document.querySelector('.selected');
+
+    if(!PieceMovement.ValidateMovement(this,selectedPiece)) return;
     //Object.values(game.self.pieces).some(x => x.id == selectedPiece.id);
     this.appendChild(selectedPiece);
+    this.classList.remove('accesible-field');
+    this.removeEventListener('click',MovePiece);
+
+    selectedPiece.classList.remove('selected');
+    selectedPiece.addEventListener('click', SelectPiece);
 
     document.dispatchEvent(new CustomEvent(Constants.SOCKET_PLAYER_ACTION, {
         detail: { 'self': game.self }
@@ -102,15 +122,26 @@ function DeselectAllPieces() {
 function SelectPiece() {
     DeselectAllPieces();
     let accesibleFields = PieceMovement.GetAccesibleFields(this, dieces)
-    EmphasizeAccesibleFields(accesibleFields);
+    if(accesibleFields){
+        EmphasizeAccesibleFields(accesibleFields);
+    }
+
     this.classList.add('selected');
     game.selectedPiece = this;
 }
 
+function UnSetAccesibleFields(){
+    let accesibleFields = document.querySelectorAll('.accesible-field');
+    if(accesibleFields.length > 0){
+        accesibleFields.map(x => x.classList.remove('accesible-field'));
+    }
+}
+
 function EmphasizeAccesibleFields(accesibleFields) {
+    UnSetAccesibleFields();
     for (let field of accesibleFields) {
         field.classList.add('accesible-field');
-        field.addEventListener('click', MovePiece(piece));
+        field.addEventListener('click', MovePiece);
     }
 }
 
