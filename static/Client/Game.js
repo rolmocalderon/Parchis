@@ -9,6 +9,7 @@ class Game {
         this.colors = null;
         this.selectedPiece = null;
         this.fields = [];
+        this.canMove = false;
     };
 
     static Create(socket) {
@@ -19,14 +20,14 @@ class Game {
 
     Init() {
         this.lastUpdateTime = Date.now();
-        this.socket.on(Constants.SOCKET_UPDATE, this.UpdateGameState.bind(this));
+        this.socket.on(Constants.SOCKET_START_GAME, this.UpdateGameState.bind(this));
         document.addEventListener(Constants.SOCKET_PLAYER_ACTION,this.Update.bind(this));
     };
 
     UpdateGameState(request) {
         this.self = request.self
         this.players = request.players;
-        document.dispatchEvent(new CustomEvent(Constants.SOCKET_REFRESH, {
+        document.dispatchEvent(new CustomEvent(Constants.SOCKET_START_GAME, {
             detail: { 'players': this.players, 'self': this.self }
         }));
     };

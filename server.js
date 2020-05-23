@@ -42,7 +42,13 @@ io.on('connection', socket => {
     socket.on(Constants.SOCKET_NEW_PLAYER, (data, callback) => {
         const player = game.AddNewPlayer(data.player.name, socket, data.player.color);
         console.log("User connected");
-        callback(player);
+        if(callback) callback(player);
+
+        if(game.players.size > 1){
+            game.SendState();
+        }else{
+            console.log('numero de jugadores:',game.players.size)
+        }
     });
 
     socket.on(Constants.SOCKET_PLAYER_ACTION, data => {
@@ -55,10 +61,10 @@ io.on('connection', socket => {
     });
 });
 
-setInterval(() => {
+/*setInterval(() => {
     game.Update();
     game.SendState();
-}, Constants.GAME_CONFIG_FRAME_RATE);
+}, Constants.GAME_CONFIG_FRAME_RATE);*/
 
 function IsCookie(request) {
     return Object.keys(request.cookies).length !== 0;

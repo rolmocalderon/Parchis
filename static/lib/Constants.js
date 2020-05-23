@@ -23,6 +23,7 @@ module.exports = {
     SOCKET_PLAYER_ACTION: 'player_action',
     SOCKET_DISCONNECT: 'disconnect',
     SOCKET_REFRESH: 'refresh',
+    SOCKET_START_GAME: 'start',
 
     //PIECES
     PIECE: 'piece',

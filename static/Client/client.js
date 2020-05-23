@@ -24,12 +24,12 @@ $(document).ready(function () {
 
         AddNewPlayer(socket);
 
-        document.addEventListener(Constants.SOCKET_REFRESH, function (response) {
+        document.addEventListener(Constants.SOCKET_START_GAME, function (response) {
             let data = response.detail;
             if (data && board) {
                 const players = response.detail.players;
                 for (const player of players) {
-                    //PopulatePlayerRegion(player[1]);
+                    PopulatePlayerRegion(player[1]);
                 }
             }
 
@@ -57,12 +57,17 @@ function ThrowDieces(){
 
     dieces.dieceOne = dieceOne, dieceOneSpan.innerHTML = dieceOne;
     dieces.dieceTwo = dieceTwo, dieceTwoSpan.innerHTML = dieceTwo;
+
+    DeselectAllPieces();
+    UnSetAccesibleFields();
+    game.canMove = true;
+    game.selectedPiece = null;
 }
 
 function AddNewPlayer(socket) {
     const player = GetPlayer();
 
-    socket.emit(Constants.SOCKET_NEW_PLAYER, { player }, PopulatePlayerRegion);
+    socket.emit(Constants.SOCKET_NEW_PLAYER, { player }, undefined);
 }
 
 function GetPlayer() {
@@ -91,6 +96,8 @@ function MovePiece() {
     document.dispatchEvent(new CustomEvent(Constants.SOCKET_PLAYER_ACTION, {
         detail: { 'self': game.self }
     }));
+
+    game.canMove = false;
 }
 
 function HandleColorsResponse(response) {
@@ -100,12 +107,13 @@ function HandleColorsResponse(response) {
 function PopulatePlayerRegion(player) {
     const region = document.getElementById(player.color);
     const owner = region.getAttribute('owner');
+    const home = region.querySelector('[state="home"]');
+
     if (owner !== player.name) {
         region.setAttribute('owner', player.name);
-        region.insertAdjacentHTML("beforeend", `<h3>${player.name}</h3>`);
+        CreateElement(home,'beforebegin',`<h3>${player.name}</h3>`);
     }
 
-    const home = region.querySelector('[state="home"]');
     for (let piece of player.pieces) {
         const element = CreateElement(home, 'beforeend', `<span id="${player.color + piece.id}" class="dot piece ${player.color}" color="${player.color}" style=""></span>`);
         element.addEventListener('click', SelectPiece);
@@ -120,6 +128,7 @@ function DeselectAllPieces() {
 }
 
 function SelectPiece() {
+    if(this.getAttribute('color') !== game.self.color || !game.canMove) return;
     DeselectAllPieces();
     let accesibleFields = PieceMovement.GetAccesibleFields(this, dieces)
     if(accesibleFields){
@@ -133,7 +142,7 @@ function SelectPiece() {
 function UnSetAccesibleFields(){
     let accesibleFields = document.querySelectorAll('.accesible-field');
     if(accesibleFields.length > 0){
-        accesibleFields.map(x => x.classList.remove('accesible-field'));
+        Array.prototype.map.call(accesibleFields, x => x.classList.remove('accesible-field'));
     }
 }
 

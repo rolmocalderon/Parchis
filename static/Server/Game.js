@@ -77,7 +77,7 @@ class Game {
         
         this.clients.forEach((client, socketID) => {
           const currentPlayer = this.players.get(socketID);
-          this.clients.get(socketID).emit(Constants.SOCKET_UPDATE, {
+          this.clients.get(socketID).emit(Constants.SOCKET_START_GAME, {
             self: currentPlayer,
             players: players
           });

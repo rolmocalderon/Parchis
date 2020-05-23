@@ -8,7 +8,7 @@ module.exports = {
         
         if(state === Constants.PIECE_STATE_HOME){
             let canLeaveHome = Object.values(dieces).some(x => x == Constants.DIECES_START_VALUE);
-            if(canLeaveHome){
+            if(canLeaveHome && home.querySelector('[state="' + Constants.PIECE_STATE_SAFE_SELF +'"]').querySelectorAll('.' + Constants.PIECE).length < 2){
                 return home.querySelectorAll('[state="' + Constants.PIECE_STATE_SAFE_SELF +'"]');
             }
         }else{
