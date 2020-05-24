@@ -1,20 +1,22 @@
 const Constants = require('./Constants');
 
 module.exports = {
-    GetAccesibleFields: function(incomingPiece,dieces) {
-        const state = incomingPiece.parentElement.getAttribute('state');
+    GetAccesibleFields: function(incomingPiece,game) {
+        const state = incomingPiece.parentElement.getAttribute('name');
         const color = incomingPiece.getAttribute('color');
         const home = document.getElementById(color);
         
         if(state === Constants.PIECE_STATE_HOME){
-            let canLeaveHome = Object.values(dieces).some(x => x == Constants.DIECES_START_VALUE);
-            if(canLeaveHome && home.querySelector('[state="' + Constants.PIECE_STATE_SAFE_SELF +'"]').querySelectorAll('.' + Constants.PIECE).length < 2){
-                return home.querySelectorAll('[state="' + Constants.PIECE_STATE_SAFE_SELF +'"]');
+            let canLeaveHome = Object.values(game.dieces).some(x => x == Constants.DIECES_START_VALUE);
+            let field = game.fields.find(field => field.state == Constants.PIECE_STATE_START && field.color == color);
+            let fieldElement = document.querySelectorAll('#' + field.id);
+            if(canLeaveHome && !this.MaxNumPiecesInFieldValidation(fieldElement[0])){
+                return fieldElement;
             }
         }else{
             let field = incomingPiece.parentElement;
             let currentFieldNum = parseInt(field.id.split(Constants.PIECE_STATE_FIELD)[1]);
-            let diecesSum = Object.values(dieces).reduce((accumulator, currentValue) => accumulator + currentValue);
+            let diecesSum = Object.values(game.dieces).reduce((accumulator, currentValue) => accumulator + currentValue);
             let requestedFieldNum = diecesSum + currentFieldNum;
             requestedFieldNum = requestedFieldNum > 68 ? requestedFieldNum - 68  : requestedFieldNum;
 
@@ -28,14 +30,14 @@ module.exports = {
     ValidateMovement: function(field,incomingPiece) {
         if(!this.MaxPieceCountInFieldValidation(field)) return false;
 
-        const state = field.getAttribute('state');
+        const state = field.getAttribute('name');
         switch (state) {
             case Constants.PIECE_STATE_FIELD:
                 return this.FieldValidation(field,incomingPiece);
             case Constants.PIECE_STATE_SAFE:
                 return this.SafeFieldValidation(field,incomingPiece);
-            case Constants.PIECE_STATE_SAFE_SELF:
-                return this.SafeSelfFieldValidation(field,incomingPiece);
+            case Constants.PIECE_STATE_START:
+                return this.StartFieldValidation(field,incomingPiece);
             case Constants.PIECE_STATE_SAFE_ENEMY:
                 return this.SafeEnemyFieldValidation(field,incomingPiece);
             default:
@@ -50,8 +52,8 @@ module.exports = {
         console.log("safe_field");
         return true;
     },
-    SafeSelfFieldValidation: function(field,incomingPiece){
-        console.log("SAFE SELF");
+    StartFieldValidation: function(field,incomingPiece){
+        console.log("START");
         return true;
     },
     SafeEnemyFieldValidation: function(field,incomingPiece){
@@ -71,6 +73,9 @@ module.exports = {
             if(currentNum == GetEntranceSpecialZoneByColor(color)) return true;
             if(currentNum == requestedNum) return false;
         }
+    },
+    MaxNumPiecesInFieldValidation: function(field){
+        return field.querySelectorAll('.' + Constants.PIECE).length > 1;
     }
 }
 
@@ -85,4 +90,8 @@ function GetEntranceSpecialZoneByColor(color){
         case "green":
             return 51;
     }
+}
+
+function GetStartField(color) {
+    
 }

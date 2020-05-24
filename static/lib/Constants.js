@@ -19,8 +19,8 @@ module.exports = {
 
     //SOCKET
     SOCKET_UPDATE: 'update',
-    SOCKET_NEW_PLAYER: 'new_player',
-    SOCKET_PLAYER_ACTION: 'player_action',
+    SOCKET_NEW_PLAYER: 'newPlayer',
+    SOCKET_PLAYER_ACTION: 'playerAction',
     SOCKET_DISCONNECT: 'disconnect',
     SOCKET_REFRESH: 'refresh',
     SOCKET_START_GAME: 'start',
@@ -28,10 +28,11 @@ module.exports = {
     //PIECES
     PIECE: 'piece',
     PIECE_STATE_HOME: 'home',
-    PIECE_STATE_END: 'end',
+    PIECE_STATE_START: 'start',
+    PIECE_STATE_END: 'endField',
     PIECE_STATE_FIELD: 'field',
-    PIECE_STATE_SAFE: 'safe_field',
-    PIECE_STATE_SAFE_SELF: 'safe_self',
-    PIECE_STATE_SAFE_ENEMY: 'safe_enemy',
-    PIECE_STATE_SPECIAL_ZONE: 'special_zone'
+    PIECE_STATE_SAFE: 'safeField',
+    PIECE_STATE_SAFE_SELF: 'safeSelf',
+    PIECE_STATE_SAFE_ENEMY: 'safeEnemy',
+    PIECE_STATE_SPECIAL_FIELD: 'specialField'
 };

@@ -25,7 +25,7 @@ app.get('/', function (request, response) {
     }
  
     console.log(request.cookies.Parchis);
-    response.sendFile(path.join(__dirname, 'index.html'));
+    response.sendFile(path.join(__dirname, 'test.html'));
 });
 
 // Get player colors
@@ -44,7 +44,7 @@ io.on('connection', socket => {
         console.log("User connected");
         if(callback) callback(player);
 
-        if(game.players.size > 1){
+        if(game.players.size > 0){
             game.SendState();
         }else{
             console.log('numero de jugadores:',game.players.size)

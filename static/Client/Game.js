@@ -10,6 +10,10 @@ class Game {
         this.selectedPiece = null;
         this.fields = [];
         this.canMove = false;
+        this.dieces = {
+            'dieceOne': 5,
+            'dieceTwo': 3
+        }
     };
 
     static Create(socket) {

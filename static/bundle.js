@@ -18002,6 +18002,10 @@ class Game {
         this.selectedPiece = null;
         this.fields = [];
         this.canMove = false;
+        this.dieces = {
+            'dieceOne': 5,
+            'dieceTwo': 3
+        }
     };
 
     static Create(socket) {
@@ -18046,21 +18050,18 @@ const Game = require('./Game.js');
 const Constants = require('../lib/Constants');
 const PieceMovement = require('../lib/PieceMovement');
 
-var colors = null;
+var colors;
 var game = null;
-var dieces = {
-    'dieceOne': 5,
-    'dieceTwo': 3
-}
 
 $(document).ready(function () {
     try {
         const socket = io();
         const board = document.getElementById('board');
         game = Game.Create(socket);
-
-        CreateBoard(board);
-        setField("field1",false);
+        InitFifelds();
+        
+        //CreateBoard(board);
+        //setField("field1",false);
 
         $.get('/colors', HandleColorsResponse);
 
@@ -18074,15 +18075,12 @@ $(document).ready(function () {
                     PopulatePlayerRegion(player[1]);
                 }
             }
-
-            console.log("Lets validate");
-            PieceMovement.FieldValidation(document.getElementById("field44"));
         });
 
         let throwDiecesButton = document.getElementById('throwDieces');
         throwDiecesButton.addEventListener('click',ThrowDieces);
 
-        window.addEventListener("beforeunload", function (e) {
+        window.addEventListener("beforeunload", function () {
             socket.emit(Constants.SOCKET_DISCONNECT);
             return "Message";
         });
@@ -18091,14 +18089,37 @@ $(document).ready(function () {
     }
 });
 
+function InitFifelds() {
+    let fields = document.querySelectorAll('.field:not(.spec)');
+    let specialFields = document.querySelectorAll('.field.spec');
+
+    let isOccuppied = false;
+    let state;
+
+    for(let field of fields){
+        let id = Constants.PIECE_STATE_FIELD + field.innerText;
+        state = field.getAttribute('name') ?? Constants.PIECE_STATE_FIELD;
+        let color = field.getAttribute('name') == Constants.PIECE_STATE_START ? field.getAttribute('color') : null;
+
+        setField(field,id,isOccuppied,state,color);
+    }
+
+    //TODO This shit
+    specialFields.forEach(function(specialField,index){
+        let id = Constants.PIECE_STATE_SPECIAL_FIELD + index;
+        state = Constants.PIECE_STATE_SPECIAL_FIELD;
+        setField(specialField,id,isOccuppied,state,null);
+    });
+}
+
 function ThrowDieces(){
     let dieceOneSpan = document.querySelector('#diece-one > [name="value"]');
     let dieceTwoSpan = document.querySelector('#diece-two > [name="value"]');
     let dieceOne = Math.floor(Math.random() * Math.floor(6)) + 1;
     let dieceTwo = Math.floor(Math.random() * Math.floor(6)) + 1;
 
-    dieces.dieceOne = dieceOne, dieceOneSpan.innerHTML = dieceOne;
-    dieces.dieceTwo = dieceTwo, dieceTwoSpan.innerHTML = dieceTwo;
+    game.dieces.dieceOne = dieceOne, dieceOneSpan.innerHTML = dieceOne;
+    game.dieces.dieceTwo = dieceTwo, dieceTwoSpan.innerHTML = dieceTwo;
 
     DeselectAllPieces();
     UnSetAccesibleFields();
@@ -18109,7 +18130,7 @@ function ThrowDieces(){
 function AddNewPlayer(socket) {
     const player = GetPlayer();
 
-    socket.emit(Constants.SOCKET_NEW_PLAYER, { player }, undefined);
+    socket.emit(Constants.SOCKET_NEW_PLAYER, { player }, PopulatePlayerRegion);
 }
 
 function GetPlayer() {
@@ -18124,7 +18145,7 @@ function GetPlayer() {
 }
 
 function MovePiece() {
-    let selectedPiece = document.querySelector('.selected');
+    let selectedPiece = game.selectedPiece;
 
     if(!PieceMovement.ValidateMovement(this,selectedPiece)) return;
     //Object.values(game.self.pieces).some(x => x.id == selectedPiece.id);
@@ -18148,13 +18169,7 @@ function HandleColorsResponse(response) {
 
 function PopulatePlayerRegion(player) {
     const region = document.getElementById(player.color);
-    const owner = region.getAttribute('owner');
-    const home = region.querySelector('[state="home"]');
-
-    if (owner !== player.name) {
-        region.setAttribute('owner', player.name);
-        CreateElement(home,'beforebegin',`<h3>${player.name}</h3>`);
-    }
+    const home = region.querySelector('[name="home"]');
 
     for (let piece of player.pieces) {
         const element = CreateElement(home, 'beforeend', `<span id="${player.color + piece.id}" class="dot piece ${player.color}" color="${player.color}" style=""></span>`);
@@ -18172,7 +18187,7 @@ function DeselectAllPieces() {
 function SelectPiece() {
     if(this.getAttribute('color') !== game.self.color || !game.canMove) return;
     DeselectAllPieces();
-    let accesibleFields = PieceMovement.GetAccesibleFields(this, dieces)
+    let accesibleFields = PieceMovement.GetAccesibleFields(this, game)
     if(accesibleFields){
         EmphasizeAccesibleFields(accesibleFields);
     }
@@ -18196,7 +18211,30 @@ function EmphasizeAccesibleFields(accesibleFields) {
     }
 }
 
-function CreateBoard(board) {
+function setField(field,id,isOccuppied,state,color) {
+    let oldField = Object.values(game.fields).find(x => x.id == id);
+    if (oldField) {
+        oldField.isOccuppied = isOccuppied;
+    }else{
+        let fieldInfo = { id, isOccuppied, state };
+        if(color){
+            Object.defineProperty(fieldInfo, 'color', {
+                value: color,
+            });
+        }
+        
+        field.id = id;
+        game.fields.push(fieldInfo);
+    }
+}
+
+function CreateElement(parent, position, template) {
+    if (!template) return null;
+    parent.insertAdjacentHTML(position, template);
+    return parent.lastChild;
+}
+
+/*function CreateBoard(board) {
     let num = 1;
     for (let i = 0; i < board.children.length; i++) {
         let region = board.children[i];
@@ -18256,33 +18294,11 @@ function InsertField(region, num, color) {
     field.setAttribute('id', id);
 
     if(isHomeField) {
-        setField(id,false,state,color);
+        setField(field,id,false,state,color);
         return;
     }
 
     setField(id,false,state);
-}
-
-function setField(id,isOccuppied,state,color) {
-    let oldField = Object.values(game.fields).find(x => x.id == id);
-    if (oldField) {
-        oldField.isOccuppied = isOccuppied;
-    }else{
-        let fieldInfo = { id, isOccuppied, state };
-        if(color){
-            Object.defineProperty(fieldInfo, 'color', {
-                value: color,
-            });
-        }
-        
-        game.fields.push(fieldInfo);
-    }
-}
-
-function CreateElement(parent, position, template) {
-    if (!template) return null;
-    parent.insertAdjacentHTML(position, template);
-    return parent.lastChild;
 }
 
 function GetDotTemplate(params) {
@@ -18325,7 +18341,7 @@ function CreateHome(region, color) {
     region.insertAdjacentHTML("beforebegin", `<div class="home ${color}" state="${Constants.PIECE_STATE_HOME}"></div>`);
     let id = color + Constants.PIECE_STATE_HOME;
     setField(id,true,Constants.PIECE_STATE_HOME,color);
-}
+}*/
 },{"../lib/Constants":51,"../lib/PieceMovement":52,"./Game.js":49,"jquery":30,"socket.io-client":33}],51:[function(require,module,exports){
 module.exports = {
     //GAME CONFIG
@@ -18348,8 +18364,8 @@ module.exports = {
 
     //SOCKET
     SOCKET_UPDATE: 'update',
-    SOCKET_NEW_PLAYER: 'new_player',
-    SOCKET_PLAYER_ACTION: 'player_action',
+    SOCKET_NEW_PLAYER: 'newPlayer',
+    SOCKET_PLAYER_ACTION: 'playerAction',
     SOCKET_DISCONNECT: 'disconnect',
     SOCKET_REFRESH: 'refresh',
     SOCKET_START_GAME: 'start',
@@ -18357,31 +18373,34 @@ module.exports = {
     //PIECES
     PIECE: 'piece',
     PIECE_STATE_HOME: 'home',
-    PIECE_STATE_END: 'end',
+    PIECE_STATE_START: 'start',
+    PIECE_STATE_END: 'endField',
     PIECE_STATE_FIELD: 'field',
-    PIECE_STATE_SAFE: 'safe_field',
-    PIECE_STATE_SAFE_SELF: 'safe_self',
-    PIECE_STATE_SAFE_ENEMY: 'safe_enemy',
-    PIECE_STATE_SPECIAL_ZONE: 'special_zone'
+    PIECE_STATE_SAFE: 'safeField',
+    PIECE_STATE_SAFE_SELF: 'safeSelf',
+    PIECE_STATE_SAFE_ENEMY: 'safeEnemy',
+    PIECE_STATE_SPECIAL_FIELD: 'specialField'
 };
 },{}],52:[function(require,module,exports){
 const Constants = require('./Constants');
 
 module.exports = {
-    GetAccesibleFields: function(incomingPiece,dieces) {
-        const state = incomingPiece.parentElement.getAttribute('state');
+    GetAccesibleFields: function(incomingPiece,game) {
+        const state = incomingPiece.parentElement.getAttribute('name');
         const color = incomingPiece.getAttribute('color');
         const home = document.getElementById(color);
         
         if(state === Constants.PIECE_STATE_HOME){
-            let canLeaveHome = Object.values(dieces).some(x => x == Constants.DIECES_START_VALUE);
-            if(canLeaveHome && home.querySelector('[state="' + Constants.PIECE_STATE_SAFE_SELF +'"]').querySelectorAll('.' + Constants.PIECE).length < 2){
-                return home.querySelectorAll('[state="' + Constants.PIECE_STATE_SAFE_SELF +'"]');
+            let canLeaveHome = Object.values(game.dieces).some(x => x == Constants.DIECES_START_VALUE);
+            let field = game.fields.find(field => field.state == Constants.PIECE_STATE_START && field.color == color);
+            let fieldElement = document.querySelectorAll('#' + field.id);
+            if(canLeaveHome && !this.MaxNumPiecesInFieldValidation(fieldElement[0])){
+                return fieldElement;
             }
         }else{
             let field = incomingPiece.parentElement;
             let currentFieldNum = parseInt(field.id.split(Constants.PIECE_STATE_FIELD)[1]);
-            let diecesSum = Object.values(dieces).reduce((accumulator, currentValue) => accumulator + currentValue);
+            let diecesSum = Object.values(game.dieces).reduce((accumulator, currentValue) => accumulator + currentValue);
             let requestedFieldNum = diecesSum + currentFieldNum;
             requestedFieldNum = requestedFieldNum > 68 ? requestedFieldNum - 68  : requestedFieldNum;
 
@@ -18395,14 +18414,14 @@ module.exports = {
     ValidateMovement: function(field,incomingPiece) {
         if(!this.MaxPieceCountInFieldValidation(field)) return false;
 
-        const state = field.getAttribute('state');
+        const state = field.getAttribute('name');
         switch (state) {
             case Constants.PIECE_STATE_FIELD:
                 return this.FieldValidation(field,incomingPiece);
             case Constants.PIECE_STATE_SAFE:
                 return this.SafeFieldValidation(field,incomingPiece);
-            case Constants.PIECE_STATE_SAFE_SELF:
-                return this.SafeSelfFieldValidation(field,incomingPiece);
+            case Constants.PIECE_STATE_START:
+                return this.StartFieldValidation(field,incomingPiece);
             case Constants.PIECE_STATE_SAFE_ENEMY:
                 return this.SafeEnemyFieldValidation(field,incomingPiece);
             default:
@@ -18417,8 +18436,8 @@ module.exports = {
         console.log("safe_field");
         return true;
     },
-    SafeSelfFieldValidation: function(field,incomingPiece){
-        console.log("SAFE SELF");
+    StartFieldValidation: function(field,incomingPiece){
+        console.log("START");
         return true;
     },
     SafeEnemyFieldValidation: function(field,incomingPiece){
@@ -18438,6 +18457,9 @@ module.exports = {
             if(currentNum == GetEntranceSpecialZoneByColor(color)) return true;
             if(currentNum == requestedNum) return false;
         }
+    },
+    MaxNumPiecesInFieldValidation: function(field){
+        return field.querySelectorAll('.' + Constants.PIECE).length > 1;
     }
 }
 
@@ -18452,6 +18474,10 @@ function GetEntranceSpecialZoneByColor(color){
         case "green":
             return 51;
     }
+}
+
+function GetStartField(color) {
+    
 }
 },{"./Constants":51}],53:[function(require,module,exports){
 'use strict'
