@@ -13,9 +13,6 @@ $(document).ready(function () {
         const board = document.getElementById('board');
         game = Game.Create(socket);
         InitFifelds();
-        
-        //CreateBoard(board);
-        //setField("field1",false);
 
         $.get('/colors', HandleColorsResponse);
 
@@ -67,13 +64,16 @@ function InitFifelds() {
 }
 
 function ThrowDieces(){
+    document.dispatchEvent(new CustomEvent(Constants.SOCKET_ACTION_THROW_DIECES, { detail: { 'callback': handleDiecesResponse } }));
+}
+
+function handleDiecesResponse(dieces){
+    game.dieces = dieces;
     let dieceOneSpan = document.querySelector('#diece-one > [name="value"]');
     let dieceTwoSpan = document.querySelector('#diece-two > [name="value"]');
-    let dieceOne = Math.floor(Math.random() * Math.floor(6)) + 1;
-    let dieceTwo = Math.floor(Math.random() * Math.floor(6)) + 1;
 
-    game.dieces.dieceOne = dieceOne, dieceOneSpan.innerHTML = dieceOne;
-    game.dieces.dieceTwo = dieceTwo, dieceTwoSpan.innerHTML = dieceTwo;
+    dieceOneSpan.innerHTML = game.dieces.dieceOne;
+    dieceTwoSpan.innerHTML = game.dieces.dieceTwo;
 
     DeselectAllPieces();
     UnSetAccesibleFields();
@@ -103,14 +103,19 @@ function MovePiece() {
 
     if(!PieceMovement.ValidateMovement(this,selectedPiece)) return;
     //Object.values(game.self.pieces).some(x => x.id == selectedPiece.id);
-    this.appendChild(selectedPiece);
+    if(this.querySelectorAll('.piece').length > 0){
+        this.prepend(selectedPiece);
+    }else{
+        this.append(selectedPiece);
+    }
+    
     this.classList.remove('accesible-field');
     this.removeEventListener('click',MovePiece);
 
     selectedPiece.classList.remove('selected');
     selectedPiece.addEventListener('click', SelectPiece);
 
-    document.dispatchEvent(new CustomEvent(Constants.SOCKET_PLAYER_ACTION, {
+    document.dispatchEvent(new CustomEvent(Constants.SOCKET_ACTION_MOVE_PIECE, {
         detail: { 'self': game.self }
     }));
 

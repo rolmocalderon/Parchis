@@ -25,7 +25,8 @@ class Game {
     Init() {
         this.lastUpdateTime = Date.now();
         this.socket.on(Constants.SOCKET_START_GAME, this.UpdateGameState.bind(this));
-        document.addEventListener(Constants.SOCKET_PLAYER_ACTION,this.Update.bind(this));
+        document.addEventListener(Constants.SOCKET_ACTION_MOVE_PIECE,this.Update.bind(this));
+        document.addEventListener(Constants.SOCKET_ACTION_THROW_DIECES,this.ThrowDieces.bind(this));
     };
 
     UpdateGameState(request) {
@@ -45,9 +46,14 @@ class Game {
         this.lastUpdateTime = Date.now();
         if (this.self) {
             this.self = data.detail.self;
-            this.socket.emit(Constants.SOCKET_PLAYER_ACTION)
+            this.socket.emit(Constants.SOCKET_ACTION_MOVE_PIECE);
         }
     };
+
+    ThrowDieces(data) {
+        let callback = data.detail.callback;
+        this.socket.emit(Constants.SOCKET_ACTION_THROW_DIECES,{'data':'1234'},callback);
+    }
 };
 
 module.exports = Game;

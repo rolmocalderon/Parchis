@@ -4,7 +4,6 @@ module.exports = {
     GetAccesibleFields: function(incomingPiece,game) {
         const state = incomingPiece.parentElement.getAttribute('name');
         const color = incomingPiece.getAttribute('color');
-        const home = document.getElementById(color);
         
         if(state === Constants.PIECE_STATE_HOME){
             let canLeaveHome = Object.values(game.dieces).some(x => x == Constants.DIECES_START_VALUE);
@@ -41,7 +40,7 @@ module.exports = {
             case Constants.PIECE_STATE_SAFE_ENEMY:
                 return this.SafeEnemyFieldValidation(field,incomingPiece);
             default:
-                return false;
+                return true;
         }
     },
     FieldValidation: function(field,incomingPiece){

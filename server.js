@@ -40,6 +40,7 @@ server.listen(5000, function () {
 
 io.on('connection', socket => {
     socket.on(Constants.SOCKET_NEW_PLAYER, (data, callback) => {
+        console.log('NEW USER',data);
         const player = game.AddNewPlayer(data.player.name, socket, data.player.color);
         console.log("User connected");
         if(callback) callback(player);
@@ -51,8 +52,14 @@ io.on('connection', socket => {
         }
     });
 
-    socket.on(Constants.SOCKET_PLAYER_ACTION, data => {
+    socket.on(Constants.SOCKET_ACTION_MOVE_PIECE, data => {
         game.PlayerMovedPiece(socket.id, data);
+    });
+
+    socket.on(Constants.SOCKET_ACTION_THROW_DIECES, (data,callback) => {
+        console.log(data);
+        if(callback) callback(game.ThrowDieces());
+        
     });
 
     socket.on(Constants.SOCKET_DISCONNECT, () => {

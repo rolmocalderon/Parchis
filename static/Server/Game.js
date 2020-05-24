@@ -25,6 +25,10 @@ class Game {
                 'color': 'green'
             }
         };
+        this.dieces = {
+            'dieceOne':0,
+            'dieceTwo':0
+        }
     };
 
     static Create(){
@@ -82,6 +86,13 @@ class Game {
             players: players
           });
         });
+      }
+
+      ThrowDieces() {
+        this.dieces.dieceOne = Math.floor(Math.random() * Math.floor(6)) + 1;
+        this.dieces.dieceTwo = Math.floor(Math.random() * Math.floor(6)) + 1;
+
+        return this.dieces;
       }
 };
 

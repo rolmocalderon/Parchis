@@ -18017,7 +18017,8 @@ class Game {
     Init() {
         this.lastUpdateTime = Date.now();
         this.socket.on(Constants.SOCKET_START_GAME, this.UpdateGameState.bind(this));
-        document.addEventListener(Constants.SOCKET_PLAYER_ACTION,this.Update.bind(this));
+        document.addEventListener(Constants.SOCKET_ACTION_MOVE_PIECE,this.Update.bind(this));
+        document.addEventListener(Constants.SOCKET_ACTION_THROW_DIECES,this.ThrowDieces.bind(this));
     };
 
     UpdateGameState(request) {
@@ -18037,9 +18038,14 @@ class Game {
         this.lastUpdateTime = Date.now();
         if (this.self) {
             this.self = data.detail.self;
-            this.socket.emit(Constants.SOCKET_PLAYER_ACTION)
+            this.socket.emit(Constants.SOCKET_ACTION_MOVE_PIECE);
         }
     };
+
+    ThrowDieces(data) {
+        let callback = data.detail.callback;
+        this.socket.emit(Constants.SOCKET_ACTION_THROW_DIECES,{'data':'1234'},callback);
+    }
 };
 
 module.exports = Game;
@@ -18059,9 +18065,6 @@ $(document).ready(function () {
         const board = document.getElementById('board');
         game = Game.Create(socket);
         InitFifelds();
-        
-        //CreateBoard(board);
-        //setField("field1",false);
 
         $.get('/colors', HandleColorsResponse);
 
@@ -18113,13 +18116,16 @@ function InitFifelds() {
 }
 
 function ThrowDieces(){
+    document.dispatchEvent(new CustomEvent(Constants.SOCKET_ACTION_THROW_DIECES, { detail: { 'callback': handleDiecesResponse } }));
+}
+
+function handleDiecesResponse(dieces){
+    game.dieces = dieces;
     let dieceOneSpan = document.querySelector('#diece-one > [name="value"]');
     let dieceTwoSpan = document.querySelector('#diece-two > [name="value"]');
-    let dieceOne = Math.floor(Math.random() * Math.floor(6)) + 1;
-    let dieceTwo = Math.floor(Math.random() * Math.floor(6)) + 1;
 
-    game.dieces.dieceOne = dieceOne, dieceOneSpan.innerHTML = dieceOne;
-    game.dieces.dieceTwo = dieceTwo, dieceTwoSpan.innerHTML = dieceTwo;
+    dieceOneSpan.innerHTML = game.dieces.dieceOne;
+    dieceTwoSpan.innerHTML = game.dieces.dieceTwo;
 
     DeselectAllPieces();
     UnSetAccesibleFields();
@@ -18149,14 +18155,19 @@ function MovePiece() {
 
     if(!PieceMovement.ValidateMovement(this,selectedPiece)) return;
     //Object.values(game.self.pieces).some(x => x.id == selectedPiece.id);
-    this.appendChild(selectedPiece);
+    if(this.querySelectorAll('.piece').length > 0){
+        this.prepend(selectedPiece);
+    }else{
+        this.append(selectedPiece);
+    }
+    
     this.classList.remove('accesible-field');
     this.removeEventListener('click',MovePiece);
 
     selectedPiece.classList.remove('selected');
     selectedPiece.addEventListener('click', SelectPiece);
 
-    document.dispatchEvent(new CustomEvent(Constants.SOCKET_PLAYER_ACTION, {
+    document.dispatchEvent(new CustomEvent(Constants.SOCKET_ACTION_MOVE_PIECE, {
         detail: { 'self': game.self }
     }));
 
@@ -18233,115 +18244,6 @@ function CreateElement(parent, position, template) {
     parent.insertAdjacentHTML(position, template);
     return parent.lastChild;
 }
-
-/*function CreateBoard(board) {
-    let num = 1;
-    for (let i = 0; i < board.children.length; i++) {
-        let region = board.children[i];
-        const color = region.id;
-
-        for (let j = 1; j <= Constants.BOARD_BOX_NUMBER; j++) {
-            if (j == Constants.BOARD_BOX_NUMBER) {
-                CreateElement(region, 'beforeend', GetSpecialZoneTemplate());
-                region = region.lastChild;
-            }
-
-            InsertField(region, num, color);
-            num++;
-        }
-    }
-
-    for (let item of board.children) {
-        const fieldId = 'field' + Constants.BOARD_SPECIALZONE_ENTRANCEFIELD_LIST[item.id];
-        const specialZone = document.getElementById(fieldId).parentNode;
-        CreateSpecialZone(specialZone, item.id);
-    }
-}
-
-function InsertField(region, num, color) {
-    let className = Constants.PIECE_STATE_FIELD;
-    let state = Constants.PIECE_STATE_FIELD;
-    let isDotType = false;
-    let isHomeField = IsFieldType(num, Constants.BOARD_STARTHOMEFIELD_NUMBER_LIST);
-    let isSafeField = IsFieldType(num, Constants.BOARD_SAFEFIELD_NUMBER_LIST);
-
-    let field = CreateElement(region, "beforeend", GetFieldTemplate());
-
-    if (isHomeField) {
-        CreateHome(field, color);
-        className += ' ' + color + ' ' + Constants.PIECE_STATE_SAFE_SELF;
-        state = Constants.PIECE_STATE_SAFE_SELF;
-        isDotType = true;
-    } else if (isSafeField) {
-        className += ' ' + Constants.PIECE_STATE_SAFE;
-        state = Constants.PIECE_STATE_SAFE;
-        isDotType = true;
-    }
-
-    let fieldClassList = 'field-number';
-    if (isDotType) fieldClassList += ' dot';
-
-    let params = {
-        'classList': fieldClassList,
-        'color': color,
-        'text': num
-    }
-    CreateElement(field, "beforeend", GetDotTemplate(params));
-
-    let id = Constants.PIECE_STATE_FIELD + num;
-    field.className = className;
-    field.setAttribute('state', state);
-    field.setAttribute('id', id);
-
-    if(isHomeField) {
-        setField(field,id,false,state,color);
-        return;
-    }
-
-    setField(id,false,state);
-}
-
-function GetDotTemplate(params) {
-    return `<span id="${params.id ?? ''}" class="${params.classList}" color="${params.color}">${params.text}</span>`;
-}
-
-function GetSpecialZoneTemplate(params) {
-    return `<div class="special-zone"></div>`;
-}
-
-function GetSpecialZoneFieldTemplate(params) {
-    if (!params) return null;
-    return `<div id="${params.id ?? ''}" class="${params.className}" state="${params.state}"></div>`;
-}
-
-function GetFieldTemplate() {
-    return `<div class state></div>`
-}
-
-function IsFieldType(num, fieldsList) {
-    return fieldsList.includes(num) ? true : false;
-}
-
-function CreateSpecialZone(specialZoneParent, color) {
-    for (let i = 1; i <= Constants.BOARD_SPECIALZONEBOX_NUMBER; i++) {
-        let className = 'field special ' + color;
-        let state = Constants.PIECE_STATE_SPECIAL_ZONE;
-
-        if (i == Constants.BOARD_SPECIALZONEBOX_NUMBER) {
-            state = Constants.PIECE_STATE_END;
-        }
-
-        const id = 'specialZone' + i;
-        let params = { id, className, state };
-        CreateElement(specialZoneParent, 'beforeend', GetSpecialZoneFieldTemplate(params));
-    }
-}
-
-function CreateHome(region, color) {
-    region.insertAdjacentHTML("beforebegin", `<div class="home ${color}" state="${Constants.PIECE_STATE_HOME}"></div>`);
-    let id = color + Constants.PIECE_STATE_HOME;
-    setField(id,true,Constants.PIECE_STATE_HOME,color);
-}*/
 },{"../lib/Constants":51,"../lib/PieceMovement":52,"./Game.js":49,"jquery":30,"socket.io-client":33}],51:[function(require,module,exports){
 module.exports = {
     //GAME CONFIG
@@ -18365,7 +18267,8 @@ module.exports = {
     //SOCKET
     SOCKET_UPDATE: 'update',
     SOCKET_NEW_PLAYER: 'newPlayer',
-    SOCKET_PLAYER_ACTION: 'playerAction',
+    SOCKET_ACTION_MOVE_PIECE: 'movePiece',
+    SOCKET_ACTION_THROW_DIECES: 'throwDieces',
     SOCKET_DISCONNECT: 'disconnect',
     SOCKET_REFRESH: 'refresh',
     SOCKET_START_GAME: 'start',
@@ -18388,7 +18291,6 @@ module.exports = {
     GetAccesibleFields: function(incomingPiece,game) {
         const state = incomingPiece.parentElement.getAttribute('name');
         const color = incomingPiece.getAttribute('color');
-        const home = document.getElementById(color);
         
         if(state === Constants.PIECE_STATE_HOME){
             let canLeaveHome = Object.values(game.dieces).some(x => x == Constants.DIECES_START_VALUE);
@@ -18425,7 +18327,7 @@ module.exports = {
             case Constants.PIECE_STATE_SAFE_ENEMY:
                 return this.SafeEnemyFieldValidation(field,incomingPiece);
             default:
-                return false;
+                return true;
         }
     },
     FieldValidation: function(field,incomingPiece){

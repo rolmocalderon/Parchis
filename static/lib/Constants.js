@@ -20,7 +20,8 @@ module.exports = {
     //SOCKET
     SOCKET_UPDATE: 'update',
     SOCKET_NEW_PLAYER: 'newPlayer',
-    SOCKET_PLAYER_ACTION: 'playerAction',
+    SOCKET_ACTION_MOVE_PIECE: 'movePiece',
+    SOCKET_ACTION_THROW_DIECES: 'throwDieces',
     SOCKET_DISCONNECT: 'disconnect',
     SOCKET_REFRESH: 'refresh',
     SOCKET_START_GAME: 'start',
