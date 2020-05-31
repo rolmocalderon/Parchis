@@ -24,16 +24,25 @@ class Game {
 
     Init() {
         this.lastUpdateTime = Date.now();
-        this.socket.on(Constants.SOCKET_START_GAME, this.UpdateGameState.bind(this));
-        document.addEventListener(Constants.SOCKET_ACTION_MOVE_PIECE,this.Update.bind(this));
+        this.socket.on(Constants.SOCKET_START_GAME, this.StartGame.bind(this));
+        this.socket.on(Constants.SOCKET_ACTION_PIECE_MOVED,this.UpdateGameState.bind(this));
+        
+        document.addEventListener(Constants.SOCKET_ACTION_MOVE_PIECE,this.MovePiece.bind(this));
         document.addEventListener(Constants.SOCKET_ACTION_THROW_DIECES,this.ThrowDieces.bind(this));
     };
 
-    UpdateGameState(request) {
+    StartGame(request) {
         this.self = request.self
         this.players = request.players;
         document.dispatchEvent(new CustomEvent(Constants.SOCKET_START_GAME, {
             detail: { 'players': this.players, 'self': this.self }
+        }));
+    };
+
+    UpdateGameState(request){
+        document.dispatchEvent(new CustomEvent(Constants.SOCKET_ACTION_PIECE_MOVED, {
+            selectedPieceId: request.selectedPieceId,
+            fieldId: request.fieldId
         }));
     };
 
@@ -42,11 +51,14 @@ class Game {
         this.Update();
     };
 
-    Update(data) {
+    MovePiece(data) {
         this.lastUpdateTime = Date.now();
         if (this.self) {
-            this.self = data.detail.self;
-            this.socket.emit(Constants.SOCKET_ACTION_MOVE_PIECE);
+            let fieldId = data.detail.fieldId;
+            let selectedPieceId = this.selectedPiece.id;
+            this.socket.emit(Constants.SOCKET_ACTION_MOVE_PIECE, {
+                fieldId,selectedPieceId
+            });
         }
     };
 

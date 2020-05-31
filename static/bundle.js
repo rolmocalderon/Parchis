@@ -17990,73 +17990,12 @@ yeast.decode = decode;
 module.exports = yeast;
 
 },{}],49:[function(require,module,exports){
-const Constants = require('../lib/Constants');
-
-class Game {
-    constructor(socket) {
-        this.socket = socket;
-        this.players = [];
-        this.lastUpdateTime = 0;
-        this.self = null;
-        this.colors = null;
-        this.selectedPiece = null;
-        this.fields = [];
-        this.canMove = false;
-        this.dieces = {
-            'dieceOne': 5,
-            'dieceTwo': 3
-        }
-    };
-
-    static Create(socket) {
-        const game = new Game(socket);
-        game.Init();
-        return game;
-    };
-
-    Init() {
-        this.lastUpdateTime = Date.now();
-        this.socket.on(Constants.SOCKET_START_GAME, this.UpdateGameState.bind(this));
-        document.addEventListener(Constants.SOCKET_ACTION_MOVE_PIECE,this.Update.bind(this));
-        document.addEventListener(Constants.SOCKET_ACTION_THROW_DIECES,this.ThrowDieces.bind(this));
-    };
-
-    UpdateGameState(request) {
-        this.self = request.self
-        this.players = request.players;
-        document.dispatchEvent(new CustomEvent(Constants.SOCKET_START_GAME, {
-            detail: { 'players': this.players, 'self': this.self }
-        }));
-    };
-
-    Run() {
-        this.lastUpdateTime = Date.now();
-        this.Update();
-    };
-
-    Update(data) {
-        this.lastUpdateTime = Date.now();
-        if (this.self) {
-            this.self = data.detail.self;
-            this.socket.emit(Constants.SOCKET_ACTION_MOVE_PIECE);
-        }
-    };
-
-    ThrowDieces(data) {
-        let callback = data.detail.callback;
-        this.socket.emit(Constants.SOCKET_ACTION_THROW_DIECES,{'data':'1234'},callback);
-    }
-};
-
-module.exports = Game;
-},{"../lib/Constants":51}],50:[function(require,module,exports){
 const $ = require('jquery');
 const io = require('socket.io-client');
 const Game = require('./Game.js');
 const Constants = require('../lib/Constants');
 const PieceMovement = require('../lib/PieceMovement');
 
-var colors;
 var game = null;
 
 $(document).ready(function () {
@@ -18064,9 +18003,8 @@ $(document).ready(function () {
         const socket = io();
         const board = document.getElementById('board');
         game = Game.Create(socket);
-        InitFifelds();
-
-        $.get('/colors', HandleColorsResponse);
+        SetColors();
+        InitFields();
 
         AddNewPlayer(socket);
 
@@ -18075,9 +18013,15 @@ $(document).ready(function () {
             if (data && board) {
                 const players = response.detail.players;
                 for (const player of players) {
-                    PopulatePlayerRegion(player[1]);
+                    if(player[1].socketID !== data.self.socketID){
+                        PopulatePlayerRegion(player[1]);
+                    }
                 }
             }
+        });
+
+        document.addEventListener(Constants.SOCKET_ACTION_PIECE_MOVED, function(data){
+            MovePiece();
         });
 
         let throwDiecesButton = document.getElementById('throwDieces');
@@ -18092,7 +18036,7 @@ $(document).ready(function () {
     }
 });
 
-function InitFifelds() {
+function InitFields() {
     let fields = document.querySelectorAll('.field:not(.spec)');
     let specialFields = document.querySelectorAll('.field.spec');
 
@@ -18107,7 +18051,6 @@ function InitFifelds() {
         setField(field,id,isOccuppied,state,color);
     }
 
-    //TODO This shit
     specialFields.forEach(function(specialField,index){
         let id = Constants.PIECE_STATE_SPECIAL_FIELD + index;
         state = Constants.PIECE_STATE_SPECIAL_FIELD;
@@ -18154,6 +18097,9 @@ function MovePiece() {
     let selectedPiece = game.selectedPiece;
 
     if(!PieceMovement.ValidateMovement(this,selectedPiece)) return;
+
+    let isOccuppied = true;
+
     //Object.values(game.self.pieces).some(x => x.id == selectedPiece.id);
     if(this.querySelectorAll('.piece').length > 0){
         this.prepend(selectedPiece);
@@ -18167,15 +18113,23 @@ function MovePiece() {
     selectedPiece.classList.remove('selected');
     selectedPiece.addEventListener('click', SelectPiece);
 
+    let fieldId = this.id;
+
+    setField(this,fieldId,isOccuppied);
+
     document.dispatchEvent(new CustomEvent(Constants.SOCKET_ACTION_MOVE_PIECE, {
-        detail: { 'self': game.self }
+        detail: {
+            fieldId
+        }
     }));
 
     game.canMove = false;
 }
 
-function HandleColorsResponse(response) {
-    colors = response;
+async function SetColors() {
+    let response = await fetch(`/colors`);
+    game.colors = await response.json();
+    return;
 }
 
 function PopulatePlayerRegion(player) {
@@ -18227,10 +18181,16 @@ function setField(field,id,isOccuppied,state,color) {
     if (oldField) {
         oldField.isOccuppied = isOccuppied;
     }else{
-        let fieldInfo = { id, isOccuppied, state };
+        let fieldInfo = { id, isOccuppied };
         if(color){
             Object.defineProperty(fieldInfo, 'color', {
                 value: color,
+            });
+        }
+  
+        if(state){
+            Object.defineProperty(fieldInfo, 'state', {
+                value: state,
             });
         }
         
@@ -18244,7 +18204,79 @@ function CreateElement(parent, position, template) {
     parent.insertAdjacentHTML(position, template);
     return parent.lastChild;
 }
-},{"../lib/Constants":51,"../lib/PieceMovement":52,"./Game.js":49,"jquery":30,"socket.io-client":33}],51:[function(require,module,exports){
+},{"../lib/Constants":51,"../lib/PieceMovement":52,"./Game.js":50,"jquery":30,"socket.io-client":33}],50:[function(require,module,exports){
+const Constants = require('../lib/Constants');
+
+class Game {
+    constructor(socket) {
+        this.socket = socket;
+        this.players = [];
+        this.lastUpdateTime = 0;
+        this.self = null;
+        this.colors = null;
+        this.selectedPiece = null;
+        this.fields = [];
+        this.canMove = false;
+        this.dieces = {
+            'dieceOne': 5,
+            'dieceTwo': 3
+        }
+    };
+
+    static Create(socket) {
+        const game = new Game(socket);
+        game.Init();
+        return game;
+    };
+
+    Init() {
+        this.lastUpdateTime = Date.now();
+        this.socket.on(Constants.SOCKET_START_GAME, this.StartGame.bind(this));
+        this.socket.on(Constants.SOCKET_ACTION_PIECE_MOVED,this.UpdateGameState.bind(this));
+        
+        document.addEventListener(Constants.SOCKET_ACTION_MOVE_PIECE,this.MovePiece.bind(this));
+        document.addEventListener(Constants.SOCKET_ACTION_THROW_DIECES,this.ThrowDieces.bind(this));
+    };
+
+    StartGame(request) {
+        this.self = request.self
+        this.players = request.players;
+        document.dispatchEvent(new CustomEvent(Constants.SOCKET_START_GAME, {
+            detail: { 'players': this.players, 'self': this.self }
+        }));
+    };
+
+    UpdateGameState(request){
+        document.dispatchEvent(new CustomEvent(Constants.SOCKET_ACTION_PIECE_MOVED, {
+            selectedPieceId: request.selectedPieceId,
+            fieldId: request.fieldId
+        }));
+    };
+
+    Run() {
+        this.lastUpdateTime = Date.now();
+        this.Update();
+    };
+
+    MovePiece(data) {
+        this.lastUpdateTime = Date.now();
+        if (this.self) {
+            let fieldId = data.detail.fieldId;
+            let selectedPieceId = this.selectedPiece.id;
+            this.socket.emit(Constants.SOCKET_ACTION_MOVE_PIECE, {
+                fieldId,selectedPieceId
+            });
+        }
+    };
+
+    ThrowDieces(data) {
+        let callback = data.detail.callback;
+        this.socket.emit(Constants.SOCKET_ACTION_THROW_DIECES,{'data':'1234'},callback);
+    }
+};
+
+module.exports = Game;
+},{"../lib/Constants":51}],51:[function(require,module,exports){
 module.exports = {
     //GAME CONFIG
     GAME_CONFIG_FRAME_RATE: 2000,//1000 / 60,
@@ -18268,6 +18300,7 @@ module.exports = {
     SOCKET_UPDATE: 'update',
     SOCKET_NEW_PLAYER: 'newPlayer',
     SOCKET_ACTION_MOVE_PIECE: 'movePiece',
+    SOCKET_ACTION_PIECE_MOVED: 'pieceMoved',
     SOCKET_ACTION_THROW_DIECES: 'throwDieces',
     SOCKET_DISCONNECT: 'disconnect',
     SOCKET_REFRESH: 'refresh',
@@ -18282,6 +18315,7 @@ module.exports = {
     PIECE_STATE_SAFE: 'safeField',
     PIECE_STATE_SAFE_SELF: 'safeSelf',
     PIECE_STATE_SAFE_ENEMY: 'safeEnemy',
+    PIECE_STATE_SPECIAL_FIELD_ENTRANCE: 'specialFieldEntrace',
     PIECE_STATE_SPECIAL_FIELD: 'specialField'
 };
 },{}],52:[function(require,module,exports){
@@ -20590,4 +20624,4 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}]},{},[50]);
+},{}]},{},[49]);

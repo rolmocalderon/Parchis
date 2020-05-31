@@ -42,7 +42,9 @@ class Game {
     };
 
     AddNewPlayer(name, socket, color) {
+        console.log("has",this.players.has(socket.id))
         if (!this.players.has(socket.id)) {
+            console.log('socket',socket.id)
             this.clients.set(socket.id, socket);
             this.colors[color].owner = name;
             const player = Player.Create(name, socket.id, color);
@@ -70,6 +72,17 @@ class Game {
         if (player) {
             player.MovePiece(data);
         }
+
+        let self = this;
+        this.players.forEach(function(x){
+            console.log(socketID)
+            if(x.socketID === socketID) return;
+            console.log('ejeme',x);
+            self.clients.get(socketID).emit(Constants.SOCKET_ACTION_PIECE_MOVED, {
+                selectedPieceId: data.selectedPieceId,
+                fieldId: data.fieldId
+            });
+        });
     };
 
     Update() {

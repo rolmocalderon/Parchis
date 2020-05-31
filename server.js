@@ -23,9 +23,8 @@ app.get('/', function (request, response) {
     if(!IsCookie(request)){
         response.cookie("Parchis", {'game':game.players});
     }
- 
-    console.log(request.cookies.Parchis);
-    response.sendFile(path.join(__dirname, 'test.html'));
+
+    response.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // Get player colors
@@ -44,7 +43,7 @@ io.on('connection', socket => {
         const player = game.AddNewPlayer(data.player.name, socket, data.player.color);
         console.log("User connected");
         if(callback) callback(player);
-
+        console.log('players',game.players);
         if(game.players.size > 0){
             game.SendState();
         }else{
@@ -57,7 +56,6 @@ io.on('connection', socket => {
     });
 
     socket.on(Constants.SOCKET_ACTION_THROW_DIECES, (data,callback) => {
-        console.log(data);
         if(callback) callback(game.ThrowDieces());
         
     });

@@ -4,7 +4,6 @@ const Game = require('./Game.js');
 const Constants = require('../lib/Constants');
 const PieceMovement = require('../lib/PieceMovement');
 
-var colors;
 var game = null;
 
 $(document).ready(function () {
@@ -12,9 +11,8 @@ $(document).ready(function () {
         const socket = io();
         const board = document.getElementById('board');
         game = Game.Create(socket);
-        InitFifelds();
-
-        $.get('/colors', HandleColorsResponse);
+        SetColors();
+        InitFields();
 
         AddNewPlayer(socket);
 
@@ -23,9 +21,15 @@ $(document).ready(function () {
             if (data && board) {
                 const players = response.detail.players;
                 for (const player of players) {
-                    PopulatePlayerRegion(player[1]);
+                    if(player[1].socketID !== data.self.socketID){
+                        PopulatePlayerRegion(player[1]);
+                    }
                 }
             }
+        });
+
+        document.addEventListener(Constants.SOCKET_ACTION_PIECE_MOVED, function(data){
+            MovePiece();
         });
 
         let throwDiecesButton = document.getElementById('throwDieces');
@@ -40,7 +44,7 @@ $(document).ready(function () {
     }
 });
 
-function InitFifelds() {
+function InitFields() {
     let fields = document.querySelectorAll('.field:not(.spec)');
     let specialFields = document.querySelectorAll('.field.spec');
 
@@ -55,7 +59,6 @@ function InitFifelds() {
         setField(field,id,isOccuppied,state,color);
     }
 
-    //TODO This shit
     specialFields.forEach(function(specialField,index){
         let id = Constants.PIECE_STATE_SPECIAL_FIELD + index;
         state = Constants.PIECE_STATE_SPECIAL_FIELD;
@@ -102,6 +105,9 @@ function MovePiece() {
     let selectedPiece = game.selectedPiece;
 
     if(!PieceMovement.ValidateMovement(this,selectedPiece)) return;
+
+    let isOccuppied = true;
+
     //Object.values(game.self.pieces).some(x => x.id == selectedPiece.id);
     if(this.querySelectorAll('.piece').length > 0){
         this.prepend(selectedPiece);
@@ -115,15 +121,23 @@ function MovePiece() {
     selectedPiece.classList.remove('selected');
     selectedPiece.addEventListener('click', SelectPiece);
 
+    let fieldId = this.id;
+
+    setField(this,fieldId,isOccuppied);
+
     document.dispatchEvent(new CustomEvent(Constants.SOCKET_ACTION_MOVE_PIECE, {
-        detail: { 'self': game.self }
+        detail: {
+            fieldId
+        }
     }));
 
     game.canMove = false;
 }
 
-function HandleColorsResponse(response) {
-    colors = response;
+async function SetColors() {
+    let response = await fetch(`/colors`);
+    game.colors = await response.json();
+    return;
 }
 
 function PopulatePlayerRegion(player) {
@@ -175,10 +189,16 @@ function setField(field,id,isOccuppied,state,color) {
     if (oldField) {
         oldField.isOccuppied = isOccuppied;
     }else{
-        let fieldInfo = { id, isOccuppied, state };
+        let fieldInfo = { id, isOccuppied };
         if(color){
             Object.defineProperty(fieldInfo, 'color', {
                 value: color,
+            });
+        }
+  
+        if(state){
+            Object.defineProperty(fieldInfo, 'state', {
+                value: state,
             });
         }
         

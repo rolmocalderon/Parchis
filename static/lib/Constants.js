@@ -21,6 +21,7 @@ module.exports = {
     SOCKET_UPDATE: 'update',
     SOCKET_NEW_PLAYER: 'newPlayer',
     SOCKET_ACTION_MOVE_PIECE: 'movePiece',
+    SOCKET_ACTION_PIECE_MOVED: 'pieceMoved',
     SOCKET_ACTION_THROW_DIECES: 'throwDieces',
     SOCKET_DISCONNECT: 'disconnect',
     SOCKET_REFRESH: 'refresh',
@@ -35,5 +36,6 @@ module.exports = {
     PIECE_STATE_SAFE: 'safeField',
     PIECE_STATE_SAFE_SELF: 'safeSelf',
     PIECE_STATE_SAFE_ENEMY: 'safeEnemy',
+    PIECE_STATE_SPECIAL_FIELD_ENTRANCE: 'specialFieldEntrace',
     PIECE_STATE_SPECIAL_FIELD: 'specialField'
 };

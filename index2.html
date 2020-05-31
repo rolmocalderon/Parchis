@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<style>
+  .field {
+    height: 10px;
+    padding: 10px 20px;
+    border: 1px solid black;
+    width: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .safe, .home {
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+  }
+
+  .home {
+    width: 250px;
+    height: 40px;
+  }
+
+  .special-zone {
+    display: flex;
+    flex-direction: row;
+  }
+
+  .special:first-of-type {
+    margin: 3px;
+  }
+
+  .special-zone > .special:nth-last-child(1) {
+    background-color: purple;
+  }
+
+  .red {
+    background-color: red;
+  }
+  .blue {
+    background-color: blue;
+  }
+  .green {
+    background-color: green;
+  }
+  .yellow {
+    background-color: yellow;
+  }
+
+  .dot {
+    height: 25px;
+    width: 25px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid black;
+  }
+
+  .piece {
+    box-shadow: 2px 3px 6px 1px;
+    z-index: 10;
+  }
+
+  .piece.selected {
+    border: 1px solid white;
+  }
+
+  .piece:hover {
+    cursor: pointer;
+  }
+
+  .piece.red {
+    background: linear-gradient(to top right, #ff9999 0%, #ff0000 100%);
+  }
+
+  .piece.red:hover {
+    background: linear-gradient(to top right, #ff0000 0%, #ff9999 100%);
+  }
+
+  .piece.yellow {
+    background: linear-gradient(to top right, #ffffcc 6%, #ffff00 101%);
+  }
+  
+  .piece.yellow:hover {
+    background: linear-gradient(to top right, #ffff00 6%, #ffffcc 101%);
+  }
+
+  .piece.blue {
+    background: linear-gradient(to top right, #3399ff 16%, #0000ff 101%);
+  }
+
+  .piece.blue:hover {
+    background: linear-gradient(to top right, #0000ff 16%, #3399ff 101%);
+  }
+
+  .piece.green {
+    background: linear-gradient(to top right, #00ff00 0%, #009933 57%);
+  }
+  
+  .piece.green:hover {
+    background: linear-gradient(to top right, #009933 0%, #00ff00 57%);
+  }
+
+  .piece:first-child {
+    position: relative;
+    right: 20px;
+  }
+
+  .piece:last-child {
+    position: relative;
+    left: 20px;
+  }
+
+  .field-number {
+    position: absolute;
+  }
+
+  .dieces {
+    display: flex;
+    flex-direction: column;;
+  }
+
+  .accesible-field{
+    border: 3px solid black;
+  }
+  
+</style>
+</head>
+<body>
+  <script type="module" src="/static/bundle.js" defer></script>
+  <button id="throwDieces">Throw Dieces</button>
+  <div class="dieces">
+    <span id="diece-one">Value: <span name="value">5</span></span>
+    <span id="diece-two">Value: <span name="value">5</span></span>
+  </div>
+  <div id="board">
+    <div id="red" name="player">
+    </div>
+    <div id="blue"name="player">
+    </div>
+    <div id="yellow" name="player">
+    </div>
+    <div id="green" name="player">
+    </div>
+  </div>
+</body>
