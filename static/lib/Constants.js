@@ -1,6 +1,11 @@
 module.exports = {
     //GAME CONFIG
-    GAME_CONFIG_FRAME_RATE: 2000,//1000 / 60,
+    GAME_CONFIG_FRAME_RATE: 2000,
+
+    //GAME STATUS
+    GAME_STATUS_PAUSE: 'pause',
+    GAME_STATUS_PLAYING: 'playing',
+    GAME_STATUS_NOT_STARTED: 'notStarted',
     
     //BOARD
     BOARD_BOX_NUMBER: '17',

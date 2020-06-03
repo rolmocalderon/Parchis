@@ -7,6 +7,7 @@ class Game {
         this.players = new Map();
         this.lastUpdateTime = null;
         this.slots = null;
+        this.status = Constants.GAME_STATUS_NOT_STARTED;
         this.colors = {
             'red': {
                 'owner': null,
@@ -99,6 +100,9 @@ class Game {
             players: players
           });
         });
+
+        console.log("SEND STATE");
+        this.status = Constants.GAME_STATUS_PLAYING;
       }
 
       ThrowDieces() {

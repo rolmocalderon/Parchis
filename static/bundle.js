@@ -18003,7 +18003,7 @@ $(document).ready(function () {
         const socket = io();
         const board = document.getElementById('board');
         game = Game.Create(socket);
-        SetColors();
+        
         InitFields();
 
         AddNewPlayer(socket);
@@ -18076,7 +18076,9 @@ function handleDiecesResponse(dieces){
     game.selectedPiece = null;
 }
 
-function AddNewPlayer(socket) {
+async function AddNewPlayer(socket) {
+    let response = await fetch(`/colors`);
+    game.colors = await response.json();
     const player = GetPlayer();
 
     socket.emit(Constants.SOCKET_NEW_PLAYER, { player }, PopulatePlayerRegion);
@@ -18090,7 +18092,16 @@ function GetPlayer() {
         { 'name': 'Ana', 'color': 'yellow' }
     ];
 
-    return players[Math.floor(Math.random() * players.length)];
+    let player = undefined;
+    do{
+        player = players[Math.floor(Math.random() * players.length)];
+        let playerValidation = Object.values(game.colors).some(x => x.color == player.color && x.owner);
+        if(playerValidation){
+            player = undefined;
+        }
+    }while(player === undefined);
+
+    return player;
 }
 
 function MovePiece() {
@@ -18126,18 +18137,12 @@ function MovePiece() {
     game.canMove = false;
 }
 
-async function SetColors() {
-    let response = await fetch(`/colors`);
-    game.colors = await response.json();
-    return;
-}
-
 function PopulatePlayerRegion(player) {
-    const region = document.getElementById(player.color);
-    const home = region.querySelector('[name="home"]');
+    let region = document.getElementById(player.color);
+    let home = region.querySelector('[name="home"]');
 
     for (let piece of player.pieces) {
-        const element = CreateElement(home, 'beforeend', `<span id="${player.color + piece.id}" class="dot piece ${player.color}" color="${player.color}" style=""></span>`);
+        let element = CreateElement(home, 'beforeend', `<span id="${player.color + piece.id}" class="dot piece ${player.color}" color="${player.color}" style=""></span>`);
         element.addEventListener('click', SelectPiece);
     }
 }
@@ -18279,7 +18284,12 @@ module.exports = Game;
 },{"../lib/Constants":51}],51:[function(require,module,exports){
 module.exports = {
     //GAME CONFIG
-    GAME_CONFIG_FRAME_RATE: 2000,//1000 / 60,
+    GAME_CONFIG_FRAME_RATE: 2000,
+
+    //GAME STATUS
+    GAME_STATUS_PAUSE: 'pause',
+    GAME_STATUS_PLAYING: 'playing',
+    GAME_STATUS_NOT_STARTED: 'notStarted',
     
     //BOARD
     BOARD_BOX_NUMBER: '17',

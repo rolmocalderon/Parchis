@@ -39,15 +39,20 @@ server.listen(5000, function () {
 
 io.on('connection', socket => {
     socket.on(Constants.SOCKET_NEW_PLAYER, (data, callback) => {
+        console.log(game.status,'status');
+        if(game.status === Constants.GAME_STATUS_PLAYING) return;
+
         console.log('NEW USER',data);
         const player = game.AddNewPlayer(data.player.name, socket, data.player.color);
         console.log("User connected");
+
         if(callback) callback(player);
-        console.log('players',game.players);
-        if(game.players.size > 0){
+
+        if(game.players.size > 1){
             game.SendState();
         }else{
-            console.log('numero de jugadores:',game.players.size)
+            console.log("No players");
+            //TODO
         }
     });
 
