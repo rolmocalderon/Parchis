@@ -18004,9 +18004,10 @@ $(document).ready(function () {
         const board = document.getElementById('board');
         game = Game.Create(socket);
         
-        InitFields();
+        InitColors();
+        InitNameForm(socket);
 
-        AddNewPlayer(socket);
+        InitFields();
 
         document.addEventListener(Constants.SOCKET_START_GAME, function (response) {
             let data = response.detail;
@@ -18036,6 +18037,23 @@ $(document).ready(function () {
     }
 });
 
+function InitNameForm(socket) {
+    let nameForm = document.getElementById('name-form');
+    nameForm.addEventListener('submit',function(event){
+        event.preventDefault();
+        let inputName = this.querySelector('#name-input');
+        let colorsDropDown = this.querySelector('#colorsDropDown');
+        let selectedColor = colorsDropDown.options[colorsDropDown.selectedIndex].value;
+        let selectedName = inputName.value;
+        if(!selectedColor || !selectedName){
+            alert("Debes escoger un nombre y un color");
+            return;
+        }
+
+        AddNewPlayer(socket,selectedName,selectedColor);
+    });
+}
+
 function InitFields() {
     let fields = document.querySelectorAll('.field:not(.spec)');
     let specialFields = document.querySelectorAll('.field.spec');
@@ -18044,7 +18062,7 @@ function InitFields() {
     let state;
 
     for(let field of fields){
-        let id = Constants.PIECE_STATE_FIELD + field.innerText;
+        let id = Constants.PIECE_STATE_FIELD + field.innerText.trim();
         state = field.getAttribute('name') ?? Constants.PIECE_STATE_FIELD;
         let color = field.getAttribute('name') == Constants.PIECE_STATE_START ? field.getAttribute('color') : null;
 
@@ -18076,12 +18094,25 @@ function handleDiecesResponse(dieces){
     game.selectedPiece = null;
 }
 
-async function AddNewPlayer(socket) {
-    let response = await fetch(`/colors`);
-    game.colors = await response.json();
-    const player = GetPlayer();
+function AddNewPlayer(socket,name,color) {
+    let player = {
+        name, color
+    }
+    //const player = GetPlayer();
 
     socket.emit(Constants.SOCKET_NEW_PLAYER, { player }, PopulatePlayerRegion);
+}
+
+async function InitColors() {
+    let response = await fetch(`/colors`);
+    game.colors = await response.json();
+    
+    let colorsDropDown = document.getElementById('colorsDropDown');
+    for(let currentColor of Object.values(game.colors)){
+        if(!currentColor.owner){
+            CreateElement(colorsDropDown, 'beforeend', `<option value="${ currentColor.color }" name="color">${ currentColor.color }</option>`)
+        }
+    }
 }
 
 function GetPlayer() {
@@ -18140,11 +18171,16 @@ function MovePiece() {
 function PopulatePlayerRegion(player) {
     let region = document.getElementById(player.color);
     let home = region.querySelector('[name="home"]');
+    let namePrompt = document.querySelector('#namePromptOverlay');
+    let gameContainer = document.querySelector('#gameContainer');
 
     for (let piece of player.pieces) {
         let element = CreateElement(home, 'beforeend', `<span id="${player.color + piece.id}" class="dot piece ${player.color}" color="${player.color}" style=""></span>`);
         element.addEventListener('click', SelectPiece);
     }
+
+    namePrompt.style.display = "none";
+    gameContainer.style.display = "block";
 }
 
 function DeselectAllPieces() {

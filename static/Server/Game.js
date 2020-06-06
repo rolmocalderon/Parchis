@@ -9,21 +9,21 @@ class Game {
         this.slots = null;
         this.status = Constants.GAME_STATUS_NOT_STARTED;
         this.colors = {
-            'red': {
+            'Red': {
                 'owner': null,
-                'color': 'red'
+                'color': 'Red'
             },
-            'blue': {
+            'Blue': {
                 'owner': null,
-                'color': 'blue'
+                'color': 'Blue'
             },
-            'yellow': {
+            'Yellow': {
                 'owner': null,
-                'color': 'yellow'
+                'color': 'Yellow'
             },
-            'green': {
+            'Green': {
                 'owner': null,
-                'color': 'green'
+                'color': 'Green'
             }
         };
         this.dieces = {
@@ -47,6 +47,7 @@ class Game {
         if (!this.players.has(socket.id)) {
             console.log('socket',socket.id)
             this.clients.set(socket.id, socket);
+            console.log(color,'color');
             this.colors[color].owner = name;
             const player = Player.Create(name, socket.id, color);
             this.players.set(socket.id, player);

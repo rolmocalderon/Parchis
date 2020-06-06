@@ -42,19 +42,19 @@
             transform: rotateY(180deg);
         }
 
-        .red, #red .spec, #red .home-field {
+        .red, #Red .spec, #Red .home-field {
             background-color: red;
         }
 
-        .blue ,#blue .spec, #blue .home-field{
+        .blue ,#Blue .spec, #Blue .home-field{
             background-color: blue;
         }
 
-        .yellow, #yellow .spec, #yellow .home-field {
+        .yellow, #yellow .spec, #Yellow .home-field {
             background-color: yellow;
         }
 
-        .green, #green .spec, #green .home-field {
+        .green, #Green .spec, #Green .home-field {
             background-color: green;
         }
 
@@ -87,25 +87,25 @@
             flex: 1;
         }
 
-        #blue {
+        #Blue {
             transform: rotateZ(-90deg);
             position: absolute;
             left: 793px;
             top: 264px;
         }
 
-        #yellow{
+        #Yellow{
             top: 529px;
             left: 528px;
         }
 
-        #green {
+        #Green {
             transform: rotateZ(90deg);
             left: 264px;
             top: 264px;
         }
 
-        #red {
+        #Red {
             transform: rotateZ(-180deg);
             left: 528px;
             top: 0;
@@ -203,11 +203,110 @@
         .accesible-field{
             border: 3px solid black;
         }
+
+        .name-prompt-overlay {
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(49,49,49,.5);
+            z-index: 100;
+        }
+
+        .name-prompt-overlay * {
+            box-sizing: border-box;
+        }
+
+        .name-prompt {
+            position: absolute;
+            width: 600px;
+            height: 100px;
+            top: 50%;
+            right: 0;
+            left: 0;
+            margin: -50px auto;
+            padding: 33px;
+            background: #bbb;
+            z-index: 101;
+            border-radius: 10px;
+        }
+
+        .name-prompt form {
+            box-sizing: border-box;
+        }
+
+        .input-group {
+            position: relative;
+            display: flex;
+            border-collapse: separate;
+        }
+
+        .input-group .form-control {
+            position: relative;
+            z-index: 2;
+            float: left;
+            width: 100%;
+            margin-bottom: 0;
+        }
+
+        .input-group .form-control, .input-group-addon, .input-group-btn {
+            display: table-cell;
+        }
+
+        .input-group-addon {
+            padding: 6px 20px;
+            color: #555;
+            text-align: center;
+            background-color: #eee;
+            border: 2px solid #ccc;
+            border-radius: 4px;
+            margin-left: 5px;
+        }
+
+        .input-group-addon:hover {
+            cursor: pointer;
+            background-color: #c1bcbc;
+        }
+
+        .input-group-addon:last-child {
+            border-left: 0;
+        }
+
+        .form-control {
+            display: block;
+            width: 100%;
+            height: 34px;
+            padding: 6px 12px;
+            font-size: 14px;
+            color: #555;
+            background-color: #fff;
+            background-image: none;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-shadow: inset 0 1px 1px rgba(0,0,0,.075);
+            transition: border-color ease-in-out .15s,box-shadow ease-in-out .15s;
+        }
     </style>
     <script type="module" src="/static/bundle.js" defer></script>
 </head>
 <body>
-    <div class="container">
+    <div id="namePromptOverlay" class="name-prompt-overlay">
+        <div class="name-prompt">    
+            <form id="name-form">
+                <div class="input-group">
+                    <input type="text" class="form-control" id="name-input" placeholder="Nombre">
+                    <select class="input-group-addon" id="colorsDropDown">
+                        <option selected="selected" name="" value="" disabled>-- Selecciona un color --</option>
+                    </select>
+                    <input type="submit" class="input-group-addon" id="name-submit" value="Jugar"></span>
+                  </div>
+            </form>
+        </div>
+    </div>
+    <div id="gameContainer" class="container" style="display:none;">
         <div class="dieces">
             <button id="throwDieces">Throw Dieces</button>
             <div class="dieces">
@@ -217,8 +316,8 @@
         </div>
         <div id="board" class="board">
             <div class="regions">
-                <div id="red" class="region">
-                    <div class="home-field" name="home" color="red"></div>
+                <div id="Red" class="region">
+                    <div class="home-field" name="home" color="Red"></div>
                     <div class="endContainer">
                         <div class="field spec end" name="endField"></div>
                     </div>
@@ -251,7 +350,7 @@
                             <div class="field corner"><span>42</span></div>
                             <div class="field">41</div>
                             <div class="field">40</div>
-                            <div class="field red" name="start" color="red">
+                            <div class="field red" name="start" color="Red">
                                 <span class="dot">39</span>
                             </div>
                             <div class="field">38</div>
@@ -261,8 +360,8 @@
                         </div>
                     </div>
                 </div>
-                <div id="green" class="region">
-                    <div class="home-field" name="home" color="green"></div>
+                <div id="Green" class="region">
+                    <div class="home-field" name="home" color="Green"></div>
                     <div class="endContainer">
                         <div class="field spec end" name="endField"></div>
                     </div>
@@ -299,7 +398,7 @@
                             </div>
                             <div class="field">58</div>
                             <div class="field">57</div>
-                            <div class="field green" name="start" color="green">
+                            <div class="field green" name="start" color="Green">
                                 <span class="dot">56</span>
                             </div>
                             <div class="field">55</div>
@@ -309,8 +408,8 @@
                         </div>
                     </div>
                 </div>
-                <div id="yellow" class="region">
-                    <div class="home-field" name="home" color="yellow"></div>
+                <div id="Yellow" class="region">
+                    <div class="home-field" name="home" color="Yellow"></div>
                     <div class="endContainer">
                         <div class="field spec end" name="endField"></div>
                     </div>
@@ -343,7 +442,7 @@
                             <div class="field corner">8</div>
                             <div class="field">7</div>
                             <div class="field">6</div>
-                            <div class="field yellow" name="start" color="yellow">
+                            <div class="field yellow" name="start" color="Yellow">
                                 <span class="dot">5</span>
                             </div>
                             <div class="field">4</div>
@@ -353,8 +452,8 @@
                         </div>
                     </div>
                 </div>
-                <div id="blue" class="region">
-                    <div class="home-field" name="home" color="blue"></div>
+                <div id="Blue" class="region">
+                    <div class="home-field" name="home" color="Blue"></div>
                     <div class="endContainer">
                         <div class="field spec end" name="endField"></div>
                     </div>
@@ -387,7 +486,7 @@
                             <div class="field corner"><span>25</span></div>
                             <div class="field">24</div>
                             <div class="field">23</div>
-                            <div class="field blue" name="start" color="blue">
+                            <div class="field blue" name="start" color="Blue">
                                 <span class="dot">22</span>
                             </div>
                             <div class="field">21</div>
