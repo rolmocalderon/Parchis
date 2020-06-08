@@ -18022,7 +18022,7 @@ $(document).ready(function () {
         });
 
         document.addEventListener(Constants.SOCKET_ACTION_PIECE_MOVED, function(data){
-            MovePiece();
+            //MovePiece();
         });
 
         let throwDiecesButton = document.getElementById('throwDieces');
@@ -18056,7 +18056,8 @@ function InitNameForm(socket) {
 
 function InitFields() {
     let fields = document.querySelectorAll('.field:not(.spec)');
-    let specialFields = document.querySelectorAll('.field.spec');
+    let specialFieldsContainer = document.querySelectorAll('[name="specialFieldsContainer"]');
+    let endFields = document.querySelectorAll('[name="endField"]');
 
     let isOccuppied = false;
     let state;
@@ -18069,11 +18070,24 @@ function InitFields() {
         setField(field,id,isOccuppied,state,color);
     }
 
-    specialFields.forEach(function(specialField,index){
-        let id = Constants.PIECE_STATE_SPECIAL_FIELD + index;
-        state = Constants.PIECE_STATE_SPECIAL_FIELD;
-        setField(specialField,id,isOccuppied,state,null);
+    specialFieldsContainer.forEach(function(specialFields){
+        specialFields = specialFields.querySelectorAll('.spec');
+        let index = 1;
+        specialFields.forEach(function(specialField){
+            let color = specialField.closest('.region').id;
+            let id = color + Constants.PIECE_STATE_SPECIAL_FIELD + index;
+            state = Constants.PIECE_STATE_SPECIAL_FIELD;
+            setField(specialField,id,isOccuppied,state,color);
+            index++;
+        });
     });
+
+    for(let endField of endFields){
+        let color = endField.closest('.region').id;
+        let id = color + Constants.PIECE_STATE_SPECIAL_FIELD + '0';
+        let state = Constants.PIECE_STATE_END;
+        setField(endField,id,isOccuppied,state,color);
+    }
 }
 
 function ThrowDieces(){
@@ -18115,26 +18129,6 @@ async function InitColors() {
     }
 }
 
-function GetPlayer() {
-    const players = [
-        { 'name': 'Ruben', 'color': 'red' },
-        { 'name': 'Alba', 'color': 'blue' },
-        { 'name': 'Lara', 'color': 'green' },
-        { 'name': 'Ana', 'color': 'yellow' }
-    ];
-
-    let player = undefined;
-    do{
-        player = players[Math.floor(Math.random() * players.length)];
-        let playerValidation = Object.values(game.colors).some(x => x.color == player.color && x.owner);
-        if(playerValidation){
-            player = undefined;
-        }
-    }while(player === undefined);
-
-    return player;
-}
-
 function MovePiece() {
     let selectedPiece = game.selectedPiece;
 
@@ -18142,7 +18136,6 @@ function MovePiece() {
 
     let isOccuppied = true;
 
-    //Object.values(game.self.pieces).some(x => x.id == selectedPiece.id);
     if(this.querySelectorAll('.piece').length > 0){
         this.prepend(selectedPiece);
     }else{
@@ -18153,12 +18146,15 @@ function MovePiece() {
     this.removeEventListener('click',MovePiece);
 
     selectedPiece.classList.remove('selected');
-    selectedPiece.addEventListener('click', SelectPiece);
-
     let fieldId = this.id;
-
     setField(this,fieldId,isOccuppied);
 
+    if(this.getAttribute('name') === Constants.PIECE_STATE_END){
+        WinGame();
+        return;
+    }
+
+    selectedPiece.addEventListener('click', SelectPiece);
     document.dispatchEvent(new CustomEvent(Constants.SOCKET_ACTION_MOVE_PIECE, {
         detail: {
             fieldId
@@ -18166,6 +18162,10 @@ function MovePiece() {
     }));
 
     game.canMove = false;
+}
+
+function WinGame() {
+    alert('ENHORABUENA');
 }
 
 function PopulatePlayerRegion(player) {
@@ -18191,7 +18191,8 @@ function DeselectAllPieces() {
 }
 
 function SelectPiece() {
-    if(this.getAttribute('color') !== game.self.color || !game.canMove) return;
+    let selfColor = game.self ? game.self.color : undefined;
+    if( !game.canMove || (!game.self && this.getAttribute('color') !== selfColor)) return;
     DeselectAllPieces();
     let accesibleFields = PieceMovement.GetAccesibleFields(this, game)
     if(accesibleFields){
@@ -18219,6 +18220,8 @@ function EmphasizeAccesibleFields(accesibleFields) {
 
 function setField(field,id,isOccuppied,state,color) {
     let oldField = Object.values(game.fields).find(x => x.id == id);
+    let oldField2 = Object.values(game.fields).find(x => x.id.toLowerCase().indexOf('specialZone') !== -1 && x.id == id);
+    
     if (oldField) {
         oldField.isOccuppied = isOccuppied;
     }else{
@@ -18258,6 +18261,7 @@ class Game {
         this.selectedPiece = null;
         this.fields = [];
         this.canMove = false;
+        this.status = null;
         this.dieces = {
             'dieceOne': 5,
             'dieceTwo': 3
@@ -18333,10 +18337,10 @@ module.exports = {
     BOARD_STARTHOMEFIELD_NUMBER_LIST: [5,22,39,56],
     BOARD_SAFEFIELD_NUMBER_LIST: [12,17,29,34,46,51,63,68],
     BOARD_SPECIALZONE_ENTRANCEFIELD_LIST: {
-        'red': 68,
-        'blue':17,
-        'yellow':34,
-        'green':51
+        'Red': 34,
+        'Blue':17,
+        'Yellow':68,
+        'Green':51
     },
 
     //DIECES
@@ -18371,14 +18375,17 @@ module.exports = {
     GetAccesibleFields: function(incomingPiece,game) {
         const state = incomingPiece.parentElement.getAttribute('name');
         const color = incomingPiece.getAttribute('color');
+        let targetField;
         
         if(state === Constants.PIECE_STATE_HOME){
             let canLeaveHome = Object.values(game.dieces).some(x => x == Constants.DIECES_START_VALUE);
             let field = game.fields.find(field => field.state == Constants.PIECE_STATE_START && field.color == color);
             let fieldElement = document.querySelectorAll('#' + field.id);
             if(canLeaveHome && !this.MaxNumPiecesInFieldValidation(fieldElement[0])){
-                return fieldElement;
+                targetField = fieldElement;
             }
+        }else if(state === Constants.PIECE_STATE_SPECIAL_FIELD){
+            console.log(game);
         }else{
             let field = incomingPiece.parentElement;
             let currentFieldNum = parseInt(field.id.split(Constants.PIECE_STATE_FIELD)[1]);
@@ -18386,12 +18393,13 @@ module.exports = {
             let requestedFieldNum = diecesSum + currentFieldNum;
             requestedFieldNum = requestedFieldNum > 68 ? requestedFieldNum - 68  : requestedFieldNum;
 
-            if(this.EntranceToSpecialZoneValidation(requestedFieldNum,currentFieldNum,color)){
-                console.log("YEAH");
-            }
+            let specialZoneValues = this.EntranceToSpecialZoneValidation(requestedFieldNum,currentFieldNum,color);
+            requestedFieldNum = specialZoneValues.currentNum;
 
-            return document.querySelectorAll('#' + Constants.PIECE_STATE_FIELD + requestedFieldNum);
+            targetField = document.querySelectorAll('#' + Constants.PIECE_STATE_FIELD + requestedFieldNum);
         }
+        
+        return targetField;
     },
     ValidateMovement: function(field,incomingPiece) {
         if(!this.MaxPieceCountInFieldValidation(field)) return false;
@@ -18435,9 +18443,12 @@ module.exports = {
         while(true){
             currentNum++;
             currentNum = currentNum > 68 ? currentNum - 68  : currentNum;
-            let field = document.querySelector('#' + Constants.PIECE_STATE_FIELD + currentNum);
-            if(currentNum == GetEntranceSpecialZoneByColor(color)) return true;
-            if(currentNum == requestedNum) return false;
+            if(currentNum == GetEntranceSpecialZoneByColor(color)) {
+                let stepsLeft = currentNum > 68 ? requestedNum - (currentNum - 68)  : requestedNum - currentNum;
+                let field = document.querySelector(`#${ color }${ Constants.PIECE_STATE_SPECIAL_FIELD }${ stepsLeft }`);
+                return {currentNum,stepsLeft};
+            }
+            if(currentNum == requestedNum) return {'currentNum':requestedNum};
         }
     },
     MaxNumPiecesInFieldValidation: function(field){
@@ -18447,19 +18458,15 @@ module.exports = {
 
 function GetEntranceSpecialZoneByColor(color){
     switch (color) {
-        case "red":
-            return 68;
-        case "yellow":
+        case "Red":
             return 34;
-        case "blue":
+        case "Yellow":
+            return 68;
+        case "Blue":
             return 17;
-        case "green":
+        case "Green":
             return 51;
     }
-}
-
-function GetStartField(color) {
-    
 }
 },{"./Constants":51}],53:[function(require,module,exports){
 'use strict'

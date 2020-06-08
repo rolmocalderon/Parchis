@@ -10,6 +10,7 @@ class Game {
         this.selectedPiece = null;
         this.fields = [];
         this.canMove = false;
+        this.status = null;
         this.dieces = {
             'dieceOne': 5,
             'dieceTwo': 3

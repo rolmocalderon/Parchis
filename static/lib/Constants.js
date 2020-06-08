@@ -13,10 +13,10 @@ module.exports = {
     BOARD_STARTHOMEFIELD_NUMBER_LIST: [5,22,39,56],
     BOARD_SAFEFIELD_NUMBER_LIST: [12,17,29,34,46,51,63,68],
     BOARD_SPECIALZONE_ENTRANCEFIELD_LIST: {
-        'red': 68,
-        'blue':17,
-        'yellow':34,
-        'green':51
+        'Red': 34,
+        'Blue':17,
+        'Yellow':68,
+        'Green':51
     },
 
     //DIECES

@@ -30,7 +30,7 @@ $(document).ready(function () {
         });
 
         document.addEventListener(Constants.SOCKET_ACTION_PIECE_MOVED, function(data){
-            MovePiece();
+            //MovePiece();
         });
 
         let throwDiecesButton = document.getElementById('throwDieces');
@@ -64,7 +64,8 @@ function InitNameForm(socket) {
 
 function InitFields() {
     let fields = document.querySelectorAll('.field:not(.spec)');
-    let specialFields = document.querySelectorAll('.field.spec');
+    let specialFieldsContainer = document.querySelectorAll('[name="specialFieldsContainer"]');
+    let endFields = document.querySelectorAll('[name="endField"]');
 
     let isOccuppied = false;
     let state;
@@ -77,11 +78,24 @@ function InitFields() {
         setField(field,id,isOccuppied,state,color);
     }
 
-    specialFields.forEach(function(specialField,index){
-        let id = Constants.PIECE_STATE_SPECIAL_FIELD + index;
-        state = Constants.PIECE_STATE_SPECIAL_FIELD;
-        setField(specialField,id,isOccuppied,state,null);
+    specialFieldsContainer.forEach(function(specialFields){
+        specialFields = specialFields.querySelectorAll('.spec');
+        let index = 1;
+        specialFields.forEach(function(specialField){
+            let color = specialField.closest('.region').id;
+            let id = color + Constants.PIECE_STATE_SPECIAL_FIELD + index;
+            state = Constants.PIECE_STATE_SPECIAL_FIELD;
+            setField(specialField,id,isOccuppied,state,color);
+            index++;
+        });
     });
+
+    for(let endField of endFields){
+        let color = endField.closest('.region').id;
+        let id = color + Constants.PIECE_STATE_SPECIAL_FIELD + '0';
+        let state = Constants.PIECE_STATE_END;
+        setField(endField,id,isOccuppied,state,color);
+    }
 }
 
 function ThrowDieces(){
@@ -123,26 +137,6 @@ async function InitColors() {
     }
 }
 
-function GetPlayer() {
-    const players = [
-        { 'name': 'Ruben', 'color': 'red' },
-        { 'name': 'Alba', 'color': 'blue' },
-        { 'name': 'Lara', 'color': 'green' },
-        { 'name': 'Ana', 'color': 'yellow' }
-    ];
-
-    let player = undefined;
-    do{
-        player = players[Math.floor(Math.random() * players.length)];
-        let playerValidation = Object.values(game.colors).some(x => x.color == player.color && x.owner);
-        if(playerValidation){
-            player = undefined;
-        }
-    }while(player === undefined);
-
-    return player;
-}
-
 function MovePiece() {
     let selectedPiece = game.selectedPiece;
 
@@ -160,12 +154,15 @@ function MovePiece() {
     this.removeEventListener('click',MovePiece);
 
     selectedPiece.classList.remove('selected');
-    selectedPiece.addEventListener('click', SelectPiece);
-
     let fieldId = this.id;
-
     setField(this,fieldId,isOccuppied);
 
+    if(this.getAttribute('name') === Constants.PIECE_STATE_END){
+        WinGame();
+        return;
+    }
+
+    selectedPiece.addEventListener('click', SelectPiece);
     document.dispatchEvent(new CustomEvent(Constants.SOCKET_ACTION_MOVE_PIECE, {
         detail: {
             fieldId
@@ -173,6 +170,10 @@ function MovePiece() {
     }));
 
     game.canMove = false;
+}
+
+function WinGame() {
+    alert('ENHORABUENA');
 }
 
 function PopulatePlayerRegion(player) {
@@ -198,7 +199,8 @@ function DeselectAllPieces() {
 }
 
 function SelectPiece() {
-    if(this.getAttribute('color') !== game.self.color || !game.canMove) return;
+    let selfColor = game.self ? game.self.color : undefined;
+    if( !game.canMove || (!game.self && this.getAttribute('color') !== selfColor)) return;
     DeselectAllPieces();
     let accesibleFields = PieceMovement.GetAccesibleFields(this, game)
     if(accesibleFields){
@@ -226,6 +228,8 @@ function EmphasizeAccesibleFields(accesibleFields) {
 
 function setField(field,id,isOccuppied,state,color) {
     let oldField = Object.values(game.fields).find(x => x.id == id);
+    let oldField2 = Object.values(game.fields).find(x => x.id.toLowerCase().indexOf('specialZone') !== -1 && x.id == id);
+    
     if (oldField) {
         oldField.isOccuppied = isOccuppied;
     }else{

@@ -38,37 +38,41 @@ server.listen(5000, function () {
 });
 
 io.on('connection', socket => {
-    socket.on(Constants.SOCKET_NEW_PLAYER, (data, callback) => {
-        console.log(game.status,'status');
-        if(game.status === Constants.GAME_STATUS_PLAYING) return;
-
-        console.log('NEW USER',data);
-        const player = game.AddNewPlayer(data.player.name, socket, data.player.color);
-        console.log("User connected");
-
-        if(callback) callback(player);
-
-        if(game.players.size > 1){
-            game.SendState();
-        }else{
-            console.log("No players");
-            //TODO
-        }
-    });
-
-    socket.on(Constants.SOCKET_ACTION_MOVE_PIECE, data => {
-        game.PlayerMovedPiece(socket.id, data);
-    });
-
-    socket.on(Constants.SOCKET_ACTION_THROW_DIECES, (data,callback) => {
-        if(callback) callback(game.ThrowDieces());
-        
-    });
-
-    socket.on(Constants.SOCKET_DISCONNECT, () => {
-        game.RemovePlayer(socket.id);
-        console.log("User disconnected");
-    });
+    try{
+        socket.on(Constants.SOCKET_NEW_PLAYER, (data, callback) => {
+            console.log(game.status,'status');
+            if(game.status === Constants.GAME_STATUS_PLAYING) return;
+    
+            console.log('NEW USER',data);
+            const player = game.AddNewPlayer(data.player.name, socket, data.player.color);
+            console.log("User connected");
+    
+            if(callback) callback(player);
+    
+            if(game.players.size > 1){
+                game.SendState();
+            }else{
+                console.log("No players");
+                //TODO
+            }
+        });
+    
+        socket.on(Constants.SOCKET_ACTION_MOVE_PIECE, data => {
+            game.PlayerMovedPiece(socket.id, data);
+        });
+    
+        socket.on(Constants.SOCKET_ACTION_THROW_DIECES, (data,callback) => {
+            if(callback) callback(game.ThrowDieces());
+            
+        });
+    
+        socket.on(Constants.SOCKET_DISCONNECT, () => {
+            game.RemovePlayer(socket.id);
+            console.log("User disconnected");
+        });
+    }catch(exception){
+        console.log(exception);
+    }
 });
 
 /*setInterval(() => {
