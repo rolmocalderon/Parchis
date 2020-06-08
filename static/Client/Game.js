@@ -11,10 +11,7 @@ class Game {
         this.fields = [];
         this.canMove = false;
         this.status = null;
-        this.dieces = {
-            'dieceOne': 5,
-            'dieceTwo': 3
-        }
+        this.dieces = {};
     };
 
     static Create(socket) {

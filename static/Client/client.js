@@ -158,9 +158,10 @@ function MovePiece() {
     setField(this,fieldId,isOccuppied);
 
     if(this.getAttribute('name') === Constants.PIECE_STATE_END){
+        selectedPiece.removeEventListener('click',SelectPiece);
         WinGame();
         return;
-    }
+    }else{}
 
     selectedPiece.addEventListener('click', SelectPiece);
     document.dispatchEvent(new CustomEvent(Constants.SOCKET_ACTION_MOVE_PIECE, {
@@ -218,12 +219,10 @@ function UnSetAccesibleFields(){
     }
 }
 
-function EmphasizeAccesibleFields(accesibleFields) {
+function EmphasizeAccesibleFields(field) {
     UnSetAccesibleFields();
-    for (let field of accesibleFields) {
-        field.classList.add('accesible-field');
-        field.addEventListener('click', MovePiece);
-    }
+    field.classList.add('accesible-field');
+    field.addEventListener('click', MovePiece);
 }
 
 function setField(field,id,isOccuppied,state,color) {

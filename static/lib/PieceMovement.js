@@ -9,8 +9,8 @@ module.exports = {
         if(state === Constants.PIECE_STATE_HOME){
             let canLeaveHome = Object.values(game.dieces).some(x => x == Constants.DIECES_START_VALUE);
             let field = game.fields.find(field => field.state == Constants.PIECE_STATE_START && field.color == color);
-            let fieldElement = document.querySelectorAll('#' + field.id);
-            if(canLeaveHome && !this.MaxNumPiecesInFieldValidation(fieldElement[0])){
+            let fieldElement = document.querySelector('#' + field.id);
+            if(canLeaveHome && !this.MaxNumPiecesInFieldValidation(fieldElement)){
                 targetField = fieldElement;
             }
         }else if(state === Constants.PIECE_STATE_SPECIAL_FIELD){
@@ -18,14 +18,15 @@ module.exports = {
         }else{
             let field = incomingPiece.parentElement;
             let currentFieldNum = parseInt(field.id.split(Constants.PIECE_STATE_FIELD)[1]);
-            let diecesSum = Object.values(game.dieces).reduce((accumulator, currentValue) => accumulator + currentValue);
-            let requestedFieldNum = diecesSum + currentFieldNum;
+            let requestedFieldNum = game.dieces.diecesSum + currentFieldNum;
             requestedFieldNum = requestedFieldNum > 68 ? requestedFieldNum - 68  : requestedFieldNum;
 
-            let specialZoneValues = this.EntranceToSpecialZoneValidation(requestedFieldNum,currentFieldNum,color);
-            requestedFieldNum = specialZoneValues.currentNum;
-
-            targetField = document.querySelectorAll('#' + Constants.PIECE_STATE_FIELD + requestedFieldNum);
+            let specialZoneField = this.EntranceToSpecialZoneValidation(requestedFieldNum,currentFieldNum,color,game.dieces);
+            if(specialZoneField){
+                targetField = specialZoneField;
+            }else{
+                targetField = document.querySelector('#' + Constants.PIECE_STATE_FIELD + requestedFieldNum);
+            }
         }
         
         return targetField;
@@ -68,17 +69,27 @@ module.exports = {
 
         return false;
     },
-    EntranceToSpecialZoneValidation: function(requestedNum,currentNum,color){
+    EntranceToSpecialZoneValidation: function(requestedNum,currentNum,color,dieces){
         while(true){
             currentNum++;
             currentNum = currentNum > 68 ? currentNum - 68  : currentNum;
             if(currentNum == GetEntranceSpecialZoneByColor(color)) {
                 let stepsLeft = currentNum > 68 ? requestedNum - (currentNum - 68)  : requestedNum - currentNum;
-                let field = document.querySelector(`#${ color }${ Constants.PIECE_STATE_SPECIAL_FIELD }${ stepsLeft }`);
-                return {currentNum,stepsLeft};
+                return this.SpecialZoneValidation(currentNum,color,stepsLeft);
             }
-            if(currentNum == requestedNum) return {'currentNum':requestedNum};
+            if(currentNum == requestedNum) return null;
         }
+    },
+    SpecialZoneValidation: function(currentNum,color,steps){
+        currentNum = Object.values(Constants.BOARD_SPECIALZONE_ENTRANCEFIELD_LIST).includes(currentNum) ? 8 : currentNum;
+        let num = currentNum - steps;
+        if(num < 0){
+            currentNum += (num * -1);
+        }else{
+            currentNum = num;
+        }
+
+        return document.querySelector(`#${ color }${ Constants.PIECE_STATE_SPECIAL_FIELD }${ currentNum }`);
     },
     MaxNumPiecesInFieldValidation: function(field){
         return field.querySelectorAll('.' + Constants.PIECE).length > 1;

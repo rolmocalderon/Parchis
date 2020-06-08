@@ -49,7 +49,7 @@ io.on('connection', socket => {
     
             if(callback) callback(player);
     
-            if(game.players.size > 1){
+            if(game.players.size > 0){
                 game.SendState();
             }else{
                 console.log("No players");

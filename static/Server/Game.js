@@ -27,8 +27,9 @@ class Game {
             }
         };
         this.dieces = {
-            'dieceOne':0,
-            'dieceTwo':0
+            'dieceOne': 0,
+            'dieceTwo': 0,
+            'diecesSum': 0
         }
     };
 
@@ -80,10 +81,15 @@ class Game {
             console.log(socketID)
             if(x.socketID === socketID) return;
             console.log('ejeme',x);
-            self.clients.get(socketID).emit(Constants.SOCKET_ACTION_PIECE_MOVED, {
-                selectedPieceId: data.selectedPieceId,
-                fieldId: data.fieldId
-            });
+            let selfSocket = self.clients.get(socketID);
+            if(selfSocket !== null){
+                selfSocket.emit(Constants.SOCKET_ACTION_PIECE_MOVED, {
+                    selectedPieceId: data.selectedPieceId,
+                    fieldId: data.fieldId
+                });
+            }else{
+                console.error("socket erróneo",selfSocket);
+            }
         });
     };
 
@@ -109,6 +115,7 @@ class Game {
       ThrowDieces() {
         this.dieces.dieceOne = Math.floor(Math.random() * Math.floor(6)) + 1;
         this.dieces.dieceTwo = Math.floor(Math.random() * Math.floor(6)) + 1;
+        this.dieces.diecesSum = this.dieces.dieceOne + this.dieces.dieceTwo;
 
         return this.dieces;
       }
