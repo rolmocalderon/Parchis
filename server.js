@@ -49,7 +49,7 @@ io.on('connection', socket => {
     
             if(callback) callback(player);
     
-            if(game.players.size > 0){
+            if(game.players.size > 1){
                 game.SendState();
             }else{
                 console.log("No players");
@@ -74,11 +74,6 @@ io.on('connection', socket => {
         console.log(exception);
     }
 });
-
-/*setInterval(() => {
-    game.Update();
-    game.SendState();
-}, Constants.GAME_CONFIG_FRAME_RATE);*/
 
 function IsCookie(request) {
     return Object.keys(request.cookies).length !== 0;

@@ -38,10 +38,8 @@ class Game {
     };
 
     UpdateGameState(request){
-        document.dispatchEvent(new CustomEvent(Constants.SOCKET_ACTION_PIECE_MOVED, {
-            selectedPieceId: request.selectedPieceId,
-            fieldId: request.fieldId
-        }));
+        let detail = request.detail;
+        document.dispatchEvent(new CustomEvent(Constants.SOCKET_ACTION_PIECE_MOVED, { detail }));
     };
 
     Run() {
@@ -54,8 +52,9 @@ class Game {
         if (this.self) {
             let fieldId = data.detail.fieldId;
             let selectedPieceId = this.selectedPiece.id;
+            let isEatenPiece = data.detail.isEatenPiece;
             this.socket.emit(Constants.SOCKET_ACTION_MOVE_PIECE, {
-                fieldId,selectedPieceId
+                fieldId,selectedPieceId,isEatenPiece
             });
         }
     };

@@ -71,22 +71,22 @@ class Game {
     };
 
     PlayerMovedPiece(socketID, data){
-        const player = this.players.get(socketID)
+        const player = this.players.get(socketID);
         if (player) {
             player.MovePiece(data);
         }
 
         let self = this;
-        this.players.forEach(function(x){
-            console.log(socketID)
-            if(x.socketID === socketID) return;
-            console.log('ejeme',x);
-            let selfSocket = self.clients.get(socketID);
+        this.players.forEach(function(player){
+            let selfSocket = self.clients.get(player.socketID);
             if(selfSocket !== null){
-                selfSocket.emit(Constants.SOCKET_ACTION_PIECE_MOVED, {
+                let detail = {
                     selectedPieceId: data.selectedPieceId,
-                    fieldId: data.fieldId
-                });
+                    fieldId: data.fieldId,
+                    isEatenPiece: data.isEatenPiece
+                }
+                console.log('detail',detail);
+                selfSocket.emit(Constants.SOCKET_ACTION_PIECE_MOVED, { detail });
             }else{
                 console.error("socket erróneo",selfSocket);
             }

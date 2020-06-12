@@ -5,19 +5,22 @@ module.exports = {
         const state = incomingPiece.parentElement.getAttribute('name');
         const color = incomingPiece.getAttribute('color');
         let targetField;
-        
+        let field;
+        let currentFieldNum;
         if(state === Constants.PIECE_STATE_HOME){
             let canLeaveHome = Object.values(game.dieces).some(x => x == Constants.DIECES_START_VALUE);
-            let field = game.fields.find(field => field.state == Constants.PIECE_STATE_START && field.color == color);
+            field = game.fields.find(field => field.state == Constants.PIECE_STATE_START && field.color == color);
             let fieldElement = document.querySelector('#' + field.id);
             if(canLeaveHome && !this.MaxNumPiecesInFieldValidation(fieldElement)){
                 targetField = fieldElement;
             }
         }else if(state === Constants.PIECE_STATE_SPECIAL_FIELD){
-            console.log(game);
+            let field = incomingPiece.parentElement;
+            currentFieldNum = parseInt(field.id.split(color + Constants.PIECE_STATE_SPECIAL_FIELD)[1]);
+            targetField = this.SpecialZoneValidation(currentFieldNum,color,game.dieces.diecesSum);
         }else{
             let field = incomingPiece.parentElement;
-            let currentFieldNum = parseInt(field.id.split(Constants.PIECE_STATE_FIELD)[1]);
+            currentFieldNum = parseInt(field.id.split(Constants.PIECE_STATE_FIELD)[1]);
             let requestedFieldNum = game.dieces.diecesSum + currentFieldNum;
             requestedFieldNum = requestedFieldNum > 68 ? requestedFieldNum - 68  : requestedFieldNum;
 
@@ -31,8 +34,10 @@ module.exports = {
         
         return targetField;
     },
-    ValidateMovement: function(field,incomingPiece) {
-        if(!this.MaxPieceCountInFieldValidation(field)) return false;
+    ValidateMovement: function(field,incomingPiece,isEatenPiece) {
+        if(!isEatenPiece){
+            if(!this.MaxPieceCountInFieldValidation(field)) return false;
+        }
 
         const state = field.getAttribute('name');
         switch (state) {
@@ -84,7 +89,7 @@ module.exports = {
         currentNum = Object.values(Constants.BOARD_SPECIALZONE_ENTRANCEFIELD_LIST).includes(currentNum) ? 8 : currentNum;
         let num = currentNum - steps;
         if(num < 0){
-            currentNum += (num * -1);
+            currentNum = (num * -1);
         }else{
             currentNum = num;
         }

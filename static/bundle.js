@@ -18004,10 +18004,12 @@ $(document).ready(function () {
         const board = document.getElementById('board');
         game = Game.Create(socket);
         
-        InitColors();
         InitNameForm(socket);
 
         InitFields();
+        initSpecialFields();
+        initHomeFields();
+        initEndFields();
 
         document.addEventListener(Constants.SOCKET_START_GAME, function (response) {
             let data = response.detail;
@@ -18022,7 +18024,19 @@ $(document).ready(function () {
         });
 
         document.addEventListener(Constants.SOCKET_ACTION_PIECE_MOVED, function(data){
-            //MovePiece();
+            game.selectedPiece = document.getElementById(data.detail.selectedPieceId);
+            let isEaten = data.detail.isEatenPiece, 
+            field = document.getElementById(data.detail.fieldId);
+
+            let pieceInField = field.querySelector('.piece');
+            let isPieceInField = pieceInField != null;
+            movePiece.call(field,isEaten,isPieceInField);
+            if(isPieceInField){
+                let pieceInFieldColor = pieceInField.getAttribute('color');
+                if(pieceInFieldColor !== game.selectedPiece.getAttribute('color')) {
+                    eatPiece(pieceInField);
+                }
+            }
         });
 
         let throwDiecesButton = document.getElementById('throwDieces');
@@ -18038,6 +18052,7 @@ $(document).ready(function () {
 });
 
 function InitNameForm(socket) {
+    initColorsDropDown();
     let nameForm = document.getElementById('name-form');
     nameForm.addEventListener('submit',function(event){
         event.preventDefault();
@@ -18056,37 +18071,48 @@ function InitNameForm(socket) {
 
 function InitFields() {
     let fields = document.querySelectorAll('.field:not(.spec)');
-    let specialFieldsContainer = document.querySelectorAll('[name="specialFieldsContainer"]');
-    let endFields = document.querySelectorAll('[name="endField"]');
-
-    let isOccuppied = false;
-    let state;
 
     for(let field of fields){
         let id = Constants.PIECE_STATE_FIELD + field.innerText.trim();
-        state = field.getAttribute('name') ?? Constants.PIECE_STATE_FIELD;
+        let state = field.getAttribute('name') ?? Constants.PIECE_STATE_FIELD;
         let color = field.getAttribute('name') == Constants.PIECE_STATE_START ? field.getAttribute('color') : null;
 
-        setField(field,id,isOccuppied,state,color);
+        setField(field,id,false,state,color);
     }
+}
 
-    specialFieldsContainer.forEach(function(specialFields){
+function initSpecialFields(){
+    let specialFieldsContainers = document.querySelectorAll('[name="specialFieldsContainer"]');
+    for(let specialFields of specialFieldsContainers){
         specialFields = specialFields.querySelectorAll('.spec');
         let index = 1;
-        specialFields.forEach(function(specialField){
+        for(let specialField of specialFields){
             let color = specialField.closest('.region').id;
             let id = color + Constants.PIECE_STATE_SPECIAL_FIELD + index;
-            state = Constants.PIECE_STATE_SPECIAL_FIELD;
-            setField(specialField,id,isOccuppied,state,color);
+            let state = Constants.PIECE_STATE_SPECIAL_FIELD;
+            setField(specialField,id,false,state,color);
             index++;
-        });
-    });
+        }
+    }
+}
 
+function initEndFields(){
+    let endFields = document.querySelectorAll('[name="endField"]');
     for(let endField of endFields){
         let color = endField.closest('.region').id;
         let id = color + Constants.PIECE_STATE_SPECIAL_FIELD + '0';
         let state = Constants.PIECE_STATE_END;
-        setField(endField,id,isOccuppied,state,color);
+        setField(endField,id,false,state,color);
+    }
+}
+
+function initHomeFields(){
+    let homeFields = document.querySelectorAll('[name="home"]');
+    for(let homeField of homeFields){
+        let color = homeField.closest('.region').id;
+        let id = color + Constants.PIECE_STATE_HOME;
+        let state = Constants.PIECE_STATE_HOME;
+        setField(homeField,id,false,state,color);
     }
 }
 
@@ -18112,12 +18138,11 @@ function AddNewPlayer(socket,name,color) {
     let player = {
         name, color
     }
-    //const player = GetPlayer();
 
     socket.emit(Constants.SOCKET_NEW_PLAYER, { player }, PopulatePlayerRegion);
 }
 
-async function InitColors() {
+async function initColorsDropDown() {
     let response = await fetch(`/colors`);
     game.colors = await response.json();
     
@@ -18129,21 +18154,30 @@ async function InitColors() {
     }
 }
 
-function MovePiece() {
+function eatPiece(eatenPiece) {
+    game.selectedPiece = eatenPiece;
+    let color = eatenPiece.getAttribute('color');
+    let home = document.getElementById(color).querySelector('[name="'+ Constants.PIECE_STATE_HOME + '"]');
+    
+    setField(home,home.id,true,Constants.PIECE_STATE_HOME,color);
+    NotifyPieceMoved(home.id,true);
+}
+
+function movePiece(event,isEaten,isPieceInField) {
     let selectedPiece = game.selectedPiece;
 
-    if(!PieceMovement.ValidateMovement(this,selectedPiece)) return;
+    if(!PieceMovement.ValidateMovement(this,selectedPiece,isEaten)) return;
 
     let isOccuppied = true;
 
-    if(this.querySelectorAll('.piece').length > 0){
+    if(isPieceInField){
         this.prepend(selectedPiece);
     }else{
         this.append(selectedPiece);
     }
     
     this.classList.remove('accesible-field');
-    this.removeEventListener('click',MovePiece);
+    this.removeEventListener('click',handleFieldClicked);
 
     selectedPiece.classList.remove('selected');
     let fieldId = this.id;
@@ -18153,16 +18187,20 @@ function MovePiece() {
         selectedPiece.removeEventListener('click',SelectPiece);
         WinGame();
         return;
-    }else{}
+    }
 
     selectedPiece.addEventListener('click', SelectPiece);
-    document.dispatchEvent(new CustomEvent(Constants.SOCKET_ACTION_MOVE_PIECE, {
-        detail: {
-            fieldId
-        }
-    }));
 
     game.canMove = false;
+}
+
+function NotifyPieceMoved(fieldId,isEatenPiece) {
+    document.dispatchEvent(new CustomEvent(Constants.SOCKET_ACTION_MOVE_PIECE, {
+        detail: {
+            fieldId,
+            isEatenPiece
+        }
+    }));
 }
 
 function WinGame() {
@@ -18193,15 +18231,20 @@ function DeselectAllPieces() {
 
 function SelectPiece() {
     let selfColor = game.self ? game.self.color : undefined;
-    if( !game.canMove || (!game.self && this.getAttribute('color') !== selfColor)) return;
+    if( !game.canMove || !game.self || this.getAttribute('color') !== selfColor) return;
     DeselectAllPieces();
-    let accesibleFields = PieceMovement.GetAccesibleFields(this, game)
-    if(accesibleFields){
-        EmphasizeAccesibleFields(accesibleFields);
+    let accesibleField = PieceMovement.GetAccesibleFields(this, game)
+    if(accesibleField){
+        EmphasizeAccesibleFields(accesibleField);
+        accesibleField.addEventListener('click', handleFieldClicked);
     }
 
     this.classList.add('selected');
     game.selectedPiece = this;
+}
+
+function handleFieldClicked() {
+    NotifyPieceMoved(this.id);
 }
 
 function UnSetAccesibleFields(){
@@ -18214,12 +18257,10 @@ function UnSetAccesibleFields(){
 function EmphasizeAccesibleFields(field) {
     UnSetAccesibleFields();
     field.classList.add('accesible-field');
-    field.addEventListener('click', MovePiece);
 }
 
 function setField(field,id,isOccuppied,state,color) {
     let oldField = Object.values(game.fields).find(x => x.id == id);
-    let oldField2 = Object.values(game.fields).find(x => x.id.toLowerCase().indexOf('specialZone') !== -1 && x.id == id);
     
     if (oldField) {
         oldField.isOccuppied = isOccuppied;
@@ -18288,10 +18329,8 @@ class Game {
     };
 
     UpdateGameState(request){
-        document.dispatchEvent(new CustomEvent(Constants.SOCKET_ACTION_PIECE_MOVED, {
-            selectedPieceId: request.selectedPieceId,
-            fieldId: request.fieldId
-        }));
+        let detail = request.detail;
+        document.dispatchEvent(new CustomEvent(Constants.SOCKET_ACTION_PIECE_MOVED, { detail }));
     };
 
     Run() {
@@ -18304,8 +18343,9 @@ class Game {
         if (this.self) {
             let fieldId = data.detail.fieldId;
             let selectedPieceId = this.selectedPiece.id;
+            let isEatenPiece = data.detail.isEatenPiece;
             this.socket.emit(Constants.SOCKET_ACTION_MOVE_PIECE, {
-                fieldId,selectedPieceId
+                fieldId,selectedPieceId,isEatenPiece
             });
         }
     };
@@ -18372,19 +18412,22 @@ module.exports = {
         const state = incomingPiece.parentElement.getAttribute('name');
         const color = incomingPiece.getAttribute('color');
         let targetField;
-        
+        let field;
+        let currentFieldNum;
         if(state === Constants.PIECE_STATE_HOME){
             let canLeaveHome = Object.values(game.dieces).some(x => x == Constants.DIECES_START_VALUE);
-            let field = game.fields.find(field => field.state == Constants.PIECE_STATE_START && field.color == color);
+            field = game.fields.find(field => field.state == Constants.PIECE_STATE_START && field.color == color);
             let fieldElement = document.querySelector('#' + field.id);
             if(canLeaveHome && !this.MaxNumPiecesInFieldValidation(fieldElement)){
                 targetField = fieldElement;
             }
         }else if(state === Constants.PIECE_STATE_SPECIAL_FIELD){
-            console.log(game);
+            let field = incomingPiece.parentElement;
+            currentFieldNum = parseInt(field.id.split(color + Constants.PIECE_STATE_SPECIAL_FIELD)[1]);
+            targetField = this.SpecialZoneValidation(currentFieldNum,color,game.dieces.diecesSum);
         }else{
             let field = incomingPiece.parentElement;
-            let currentFieldNum = parseInt(field.id.split(Constants.PIECE_STATE_FIELD)[1]);
+            currentFieldNum = parseInt(field.id.split(Constants.PIECE_STATE_FIELD)[1]);
             let requestedFieldNum = game.dieces.diecesSum + currentFieldNum;
             requestedFieldNum = requestedFieldNum > 68 ? requestedFieldNum - 68  : requestedFieldNum;
 
@@ -18398,8 +18441,10 @@ module.exports = {
         
         return targetField;
     },
-    ValidateMovement: function(field,incomingPiece) {
-        if(!this.MaxPieceCountInFieldValidation(field)) return false;
+    ValidateMovement: function(field,incomingPiece,isEatenPiece) {
+        if(!isEatenPiece){
+            if(!this.MaxPieceCountInFieldValidation(field)) return false;
+        }
 
         const state = field.getAttribute('name');
         switch (state) {
@@ -18451,7 +18496,7 @@ module.exports = {
         currentNum = Object.values(Constants.BOARD_SPECIALZONE_ENTRANCEFIELD_LIST).includes(currentNum) ? 8 : currentNum;
         let num = currentNum - steps;
         if(num < 0){
-            currentNum += (num * -1);
+            currentNum = (num * -1);
         }else{
             currentNum = num;
         }

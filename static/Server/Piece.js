@@ -1,8 +1,8 @@
 class Piece{
-    constructor(id,state,position){
+    constructor(id,state,isEaten){
         this.id = id;
         this.state = state;
-        this.position = position;
+        this.isEaten = isEaten;
     };
 };
 

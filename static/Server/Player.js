@@ -21,7 +21,7 @@ class Player {
     InitPieces() {
         for(let i=0; i < 4; i++)
         {
-            this.pieces.push(new Piece(i,Constants.PIECE_STATE_HOME,0));
+            this.pieces.push(new Piece(i,Constants.PIECE_STATE_HOME,false));
         }
     };
 
