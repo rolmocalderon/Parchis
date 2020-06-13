@@ -73,7 +73,7 @@ function InitNameForm(socket) {
             return;
         }
 
-        AddNewPlayer(socket,selectedName,selectedColor);
+        addNewPlayer(socket,selectedName,selectedColor);
     });
 }
 
@@ -142,7 +142,7 @@ function handleDiecesResponse(dieces){
     game.selectedPiece = null;
 }
 
-function AddNewPlayer(socket,name,color) {
+function addNewPlayer(socket,name,color) {
     let player = {
         name, color
     }
@@ -174,7 +174,7 @@ function eatPiece(eatenPiece) {
 function movePiece(event,isEaten,isPieceInField) {
     let selectedPiece = game.selectedPiece;
 
-    if(!PieceMovement.ValidateMovement(this,selectedPiece,isEaten)) return;
+    if(!PieceMovement.validateMovement(this,selectedPiece,isEaten)) return;
 
     let isOccuppied = true;
 
@@ -239,9 +239,10 @@ function DeselectAllPieces() {
 
 function SelectPiece() {
     let selfColor = game.self ? game.self.color : undefined;
-    if( !game.canMove || !game.self || this.getAttribute('color') !== selfColor) return;
+    let pieceColor = this.getAttribute('color');
+    if( !game.canMove || !game.self || pieceColor !== selfColor) return;
     DeselectAllPieces();
-    let accesibleField = PieceMovement.GetAccesibleFields(this, game)
+    let accesibleField = PieceMovement.getAccesibleField(this.parentElement,game,pieceColor)
     if(accesibleField){
         EmphasizeAccesibleFields(accesibleField);
         accesibleField.addEventListener('click', handleFieldClicked);
