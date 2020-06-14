@@ -246,10 +246,9 @@ function SelectPiece() {
     if(accesibleField){
         EmphasizeAccesibleFields(accesibleField);
         accesibleField.addEventListener('click', handleFieldClicked);
+        this.classList.add('selected');
+        game.selectedPiece = this;
     }
-
-    this.classList.add('selected');
-    game.selectedPiece = this;
 }
 
 function handleFieldClicked() {

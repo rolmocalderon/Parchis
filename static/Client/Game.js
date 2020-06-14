@@ -12,6 +12,7 @@ class Game {
         this.canMove = false;
         this.status = null;
         this.dieces = {};
+        this.wallInRouteField = null;
     };
 
     static Create(socket) {

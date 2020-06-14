@@ -85,7 +85,7 @@ class Game {
                     fieldId: data.fieldId,
                     isEatenPiece: data.isEatenPiece
                 }
-                console.log('detail',detail);
+                console.log('piece moved:',selfSocket);
                 selfSocket.emit(Constants.SOCKET_ACTION_PIECE_MOVED, { detail });
             }else{
                 console.error("socket erróneo",selfSocket);

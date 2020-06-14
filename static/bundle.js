@@ -18238,10 +18238,9 @@ function SelectPiece() {
     if(accesibleField){
         EmphasizeAccesibleFields(accesibleField);
         accesibleField.addEventListener('click', handleFieldClicked);
+        this.classList.add('selected');
+        game.selectedPiece = this;
     }
-
-    this.classList.add('selected');
-    game.selectedPiece = this;
 }
 
 function handleFieldClicked() {
@@ -18304,6 +18303,7 @@ class Game {
         this.canMove = false;
         this.status = null;
         this.dieces = {};
+        this.wallInRouteField = null;
     };
 
     static Create(socket) {
@@ -18412,14 +18412,25 @@ module.exports = {
     getAccesibleField: function(actualField,game,color) {
         const state = actualField.getAttribute('name');
         let targetField;
+        let currentFieldNum = parseInt(actualField.id.split(Constants.PIECE_STATE_FIELD)[1]);
+        let requestedFieldNum = game.dieces.diecesSum + currentFieldNum;
+        requestedFieldNum = requestedFieldNum > 68 ? requestedFieldNum - 68  : requestedFieldNum;
 
         if(state === Constants.PIECE_STATE_HOME){
             targetField = this.getHomeField(game.dieces,game.fields,color);
         }else if(state === Constants.PIECE_STATE_SPECIAL_FIELD){
             let actualFieldId = parseInt(field.id.split(color + Constants.PIECE_STATE_SPECIAL_FIELD)[1]);
             targetField = this.getSpecialField(actualFieldId,game.dieces.diecesSum,color);
+        }else if(this.isEntranceToSpecialZone(requestedFieldNum,currentFieldNum,color)){
+            let entranceFieldNum = GetEntranceSpecialZoneByColor(color);
+            let stepsLeft = dieces.diecesSum - (entranceFieldNum - currentFieldNum);
+            targetField = this.getSpecialField(entranceFieldNum,stepsLeft,color);
+        }else if(this.isWallInRoute(game,currentFieldNum,requestedFieldNum)){
+            let wallRouteFieldId = game.wallInRouteField.id.split(Constants.PIECE_STATE_FIELD)[1] - 1;
+            let requestedFieldNum = wallRouteFieldId - (game.dieces.diecesSum - (wallRouteFieldId - currentFieldNum));
+            targetField = this.getField(requestedFieldNum);
         }else{
-            targetField = this.getField(game.dieces,actualField,color);
+            targetField = this.getField(requestedFieldNum,game.dieces,currentFieldNum,color);
         }
         
         return targetField;
@@ -18432,28 +18443,9 @@ module.exports = {
             return fieldElement;
         }
     },
-    getField: function(dieces,actualField,color) {
-        let targetField;
-        let currentFieldNum = parseInt(actualField.id.split(Constants.PIECE_STATE_FIELD)[1]);
-        let requestedFieldNum = dieces.diecesSum + currentFieldNum;
-        requestedFieldNum = requestedFieldNum > 68 ? requestedFieldNum - 68  : requestedFieldNum;
-
-        if(this.isWallInRoute(currentFieldNum,requestedFieldNum)){
-
-        }else if(this.isEntranceToSpecialZone(requestedFieldNum,currentFieldNum,color)){
-            let entranceFieldNum = GetEntranceSpecialZoneByColor(color);
-            let stepsLeft = dieces.diecesSum - (entranceFieldNum - currentFieldNum);
-            targetField = this.getSpecialField(entranceFieldNum,stepsLeft,color);
-        }else{
-            targetField = document.querySelector('#' + Constants.PIECE_STATE_FIELD + requestedFieldNum);
-        }
-
-        return targetField;
+    getField: function(requestedFieldNum) {
+        return document.querySelector('#' + Constants.PIECE_STATE_FIELD + requestedFieldNum);
     },
-    /*getSpecialField: function(diecesSum,field,color) {
-        let currentFieldNum = parseInt(field.id.split(color + Constants.PIECE_STATE_SPECIAL_FIELD)[1]);
-        return this.SpecialZoneValidation(currentFieldNum,color,diecesSum);
-    }*/
     getSpecialField: function(currentNum,steps,color) {
         currentNum = Object.values(Constants.BOARD_SPECIALZONE_ENTRANCEFIELD_LIST).includes(currentNum) ? 8 : currentNum;
         let num = currentNum - steps;
@@ -18465,12 +18457,19 @@ module.exports = {
 
         return document.querySelector(`#${ color }${ Constants.PIECE_STATE_SPECIAL_FIELD }${ currentNum }`);
     },
-    isWallInRoute: function(currentFieldNum,requestedFieldNum){
+    isWallInRoute: function(game,currentFieldNum,requestedFieldNum){
+        for(let i = ++currentFieldNum; i < requestedFieldNum; i++){
+            let field = document.querySelector('#' + Constants.PIECE_STATE_FIELD + i);
+            if(this.isMaxPieceCountInField(field)){
+                game.wallInRouteField = field;
+                return true;
+            }
+        }
         return false;
     },
     validateMovement: function(targetField,incomingPiece,isEatenPiece) {
         if(!isEatenPiece){
-            if(this.maxPieceCountInField(targetField)) return false;
+            if(this.isMaxPieceCountInField(targetField)) return false;
         }
 
         const state = targetField.getAttribute('name');
@@ -18502,21 +18501,8 @@ module.exports = {
         console.log("safe_enemy");
         return true;
     },
-    maxPieceCountInField: function(field){
-        if(field.querySelectorAll('.piece').length === 2) return true;
-
-        return false;
-    },
-    entranceToSpecialZoneValidation: function(requestedNum,currentNum,color){
-        while(true){
-            currentNum++;
-            if(currentNum == GetEntranceSpecialZoneByColor(color)) {
-                let stepsLeft = requestedNum - currentNum;
-                return this.getSpecialField(currentNum,stepsLeft,color);
-                //return this.SpecialZoneValidation(currentNum,color,stepsLeft);
-            }
-            if(currentNum == requestedNum) return null;
-        }
+    isMaxPieceCountInField: function(field){
+        return field.querySelectorAll('.piece').length === 2;
     },
     isEntranceToSpecialZone: function(requestedNum,currentNum,color){
         while(true){
@@ -18529,9 +18515,6 @@ module.exports = {
             currentNum = currentNum > 68 ? currentNum - 68  : currentNum;
             if(currentNum == requestedNum) return false;
         }
-    },
-    SpecialZoneValidation: function(currentNum,color,steps){
-
     },
     MaxNumPiecesInFieldValidation: function(field){
         return field.querySelectorAll('.' + Constants.PIECE).length > 1;
